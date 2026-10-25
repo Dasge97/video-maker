@@ -1,0 +1,154 @@
+{
+    "summary": "Te propongo un anuncio de 15 segundos. Como en la referencia, empieza contigo hablando a cámara con el móvil en la mano. Después va cambiando de plano a menudo: llenas la botella en el grifo, vuelves a hablar con ella junto a la cara, se ve la botella de cerca con el precio y acaba con el logo de Brisa y «Pídela en brisa.es».",
+    "reference": {
+        "summary": "Una presentadora explica a cámara qué es el contenido creado por usuarios para marcas, con un tono cercano y casero. Al final enseña un ejemplo: un anuncio corto de una creadora que presenta un sérum, con planos rápidos del producto y rótulos con sus ventajas.",
+        "rhythm": "7 planos. Empieza con un selfie de 3 s hablando a cámara con una pregunta grande arriba. Sigue un plano largo hablando a cámara de unos 66 s. Cierra con cinco planos rápidos de 1,5 a 6 s que alternan producto y creadora, y acaba con ella tocándose la cara entre rótulos.",
+        "beats": [
+            {
+                "start": 0,
+                "end": 3.1,
+                "frame": 0,
+                "what": "La presentadora, con el móvil sujeto en la mano desde abajo, plantea a cámara la pregunta de qué es el UGC. Arriba hay un rótulo grande con la pregunta."
+            },
+            {
+                "start": 3.1,
+                "end": 69.2,
+                "frame": 1,
+                "what": "Plano largo de la presentadora hablando a cámara: explica que una marca paga a un creador para que haga contenido y lo use en sus anuncios."
+            },
+            {
+                "start": 69.2,
+                "end": 73.1,
+                "frame": 2,
+                "what": "Empieza el ejemplo: una mano levanta un tubo de sérum hacia la cámara, en una habitación luminosa."
+            },
+            {
+                "start": 73.1,
+                "end": 74.5,
+                "frame": 3,
+                "what": "Primer plano rápido del tubo sobre un espejo dorado, con rótulos que dicen que sustituye a varios sérums."
+            },
+            {
+                "start": 74.5,
+                "end": 78.2,
+                "frame": 4,
+                "what": "La creadora sostiene el tubo junto a la mejilla mirando a cámara, con un rótulo sobre ahorrar tiempo y dinero."
+            },
+            {
+                "start": 78.2,
+                "end": 79.7,
+                "frame": 5,
+                "what": "Detalle del producto saliendo del tubo sobre el espejo dorado."
+            },
+            {
+                "start": 79.7,
+                "end": 85.9,
+                "frame": 6,
+                "what": "La creadora se toca la cara mirando a cámara, rodeada de rótulos con las ventajas del producto."
+            }
+        ]
+    },
+    "pieces": [
+        {
+            "kind": "talking_person",
+            "title": "Gancho",
+            "voice": "¿Tu agua del grifo sabe a cloro?",
+            "plannedSeconds": 3.5,
+            "transition": "cut",
+            "scene": {
+                "action": "La persona sostiene el móvil con una mano, levanta una ceja y hace una mueca de desagrado mientras habla a cámara con complicidad.",
+                "framing": "Primer plano en vertical, cara centrada y grande",
+                "camera": "Cámara en mano tipo selfie, ligeramente desde abajo, con un leve balanceo natural",
+                "lighting": "Luz natural suave de ventana, cálida y casera",
+                "withPerson": true,
+                "startImage": "La persona en su cocina luminosa, con camiseta verde, encuadrada en primer plano desde un ángulo ligeramente bajo como un selfie, mirando a cámara. Detrás, estantes de madera con plantas y tarros desenfocados, y luz natural suave de ventana.",
+                "imitateFrame": 0
+            }
+        },
+        {
+            "kind": "generated_clip",
+            "title": "Producto",
+            "voice": "Prueba Brisa, botella con filtro.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "scene": {
+                "action": "La persona llena en el grifo de la cocina una botella reutilizable transparente con tapa azul y un filtro cilíndrico oscuro dentro. Después la levanta hacia la cámara con una sonrisa.",
+                "framing": "Plano medio corto en vertical, con la botella y las manos en el centro",
+                "camera": "Cámara en mano cercana que sigue la botella mientras sube hacia el objetivo",
+                "lighting": "Luz natural de día, brillante y limpia",
+                "withPerson": true,
+                "startImage": "La persona, con camiseta verde, junto al fregadero de una cocina luminosa, llenando en el grifo una botella reutilizable transparente con tapa azul y un filtro cilíndrico oscuro de carbón dentro. El chorro de agua cae en la botella y detrás hay plantas.",
+                "imitateFrame": 2
+            }
+        },
+        {
+            "kind": "talking_person",
+            "title": "Solución",
+            "voice": "Su filtro de carbón quita ese sabor.",
+            "plannedSeconds": 4,
+            "transition": "cut",
+            "scene": {
+                "action": "La persona sostiene la botella llena junto a la mejilla mientras habla a cámara, satisfecha. Al final da un pequeño sorbo y sonríe.",
+                "framing": "Primer plano en vertical, con la cara y la botella grandes y centradas",
+                "camera": "Cámara en mano tipo selfie, frontal, con un ligero movimiento natural",
+                "lighting": "Luz natural suave de ventana",
+                "withPerson": true,
+                "startImage": "La persona, con camiseta verde, en su cocina luminosa, en primer plano mirando a cámara. Sostiene junto a la mejilla una botella reutilizable transparente con tapa azul, llena de agua y con un filtro cilíndrico oscuro de carbón dentro. Detrás, la cocina desenfocada con plantas.",
+                "imitateFrame": 4
+            }
+        },
+        {
+            "kind": "image_motion",
+            "title": "Precio",
+            "voice": "Cuesta 24,90 € y envío gratis.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "motion": "zoom_in",
+            "scene": {
+                "action": "Una botella reutilizable transparente con tapa azul, llena de agua cristalina y con un filtro cilíndrico oscuro de carbón dentro, sobre una encimera clara con gotas de agua alrededor.",
+                "framing": "Primer plano en vertical, con la botella grande y centrada",
+                "camera": "Acercamiento lento hacia la botella",
+                "lighting": "Luz natural lateral que hace brillar el agua",
+                "withPerson": false,
+                "startImage": "Una botella reutilizable transparente con tapa azul, llena de agua cristalina y con un filtro cilíndrico oscuro de carbón visible dentro, de pie sobre una encimera blanca con gotas de agua. Al fondo, una cocina luminosa desenfocada con plantas verdes y luz de ventana lateral.",
+                "imitateFrame": 5
+            }
+        },
+        {
+            "kind": "logo_card",
+            "title": "Llamada a la acción",
+            "voice": "Pídela ya en brisa.es.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "logo": {
+                "text": "Pídela en brisa.es",
+                "background": null
+            }
+        }
+    ],
+    "overlays": [
+        {
+            "kind": "label",
+            "text": "Adiós al sabor a cloro",
+            "fromPiece": 2,
+            "toPiece": 2,
+            "position": "top"
+        },
+        {
+            "kind": "price",
+            "text": "24,90 € · Envío gratis",
+            "fromPiece": 4,
+            "toPiece": 4,
+            "position": "top"
+        }
+    ],
+    "subtitles": true,
+    "music": {
+        "style": "Pop acústico ligero con ritmo marcado",
+        "mood": "Fresco, cercano y optimista"
+    },
+    "questions": [
+        "¿Tienes una foto real de la botella Brisa? Así la imagen que se genere se parecería más a tu producto.",
+        "Si quieres contar más ventajas con más planos rápidos, como al final de la referencia, podemos hacer una versión de 20 a 30 segundos."
+    ]
+}

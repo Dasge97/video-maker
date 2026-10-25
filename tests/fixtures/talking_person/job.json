@@ -1,0 +1,86 @@
+{
+    "input": {
+        "mode": "talking_person",
+        "durationSeconds": 15,
+        "product": "Brisa es una botella con filtro de carbón que quita el sabor a cloro del agua del grifo. Cuesta 24,90 € y el envío es gratis. Llamada a la acción: pídela en brisa.es",
+        "note": "Me gusta que empieza hablando a cámara y que cambia de plano a menudo",
+        "voiceId": "f9DFWr0Y8aHd6VNMEdTt",
+        "model": "balanced",
+        "brand": {
+            "name": "Brisa",
+            "colors": "#01A1CB, #0B2A3A",
+            "font": "Poppins",
+            "forbiddenWords": [
+                "barato"
+            ]
+        },
+        "referenceFile": "input/reference.mp4",
+        "referenceUrl": "https://www.youtube.com/shorts/vNo12pMbo5M",
+        "personFile": "input/person-upload.jpg",
+        "logoFile": "input/logo-upload.png",
+        "hasLogo": true
+    },
+    "reference": {
+        "durationSeconds": 85.93,
+        "hasAudio": true,
+        "frames": 7,
+        "transcript": true
+    },
+    "estimate": {
+        "usd": 0.97,
+        "lines": [
+            {
+                "what": "Pieza 1: imagen de arranque",
+                "usd": 0.06,
+                "piece": 0
+            },
+            {
+                "what": "Pieza 1: persona hablando (Kling AI Avatar, 3,5 s)",
+                "usd": 0.1967,
+                "piece": 0
+            },
+            {
+                "what": "Pieza 2: imagen de arranque",
+                "usd": 0.06,
+                "piece": 1
+            },
+            {
+                "what": "Pieza 2: clip (Kling O3 Standard, 3 s)",
+                "usd": 0.252,
+                "piece": 1
+            },
+            {
+                "what": "Pieza 3: imagen de arranque",
+                "usd": 0.06,
+                "piece": 2
+            },
+            {
+                "what": "Pieza 3: persona hablando (Kling AI Avatar, 4 s)",
+                "usd": 0.2248,
+                "piece": 2
+            },
+            {
+                "what": "Pieza 4: imagen de arranque",
+                "usd": 0.06,
+                "piece": 3
+            },
+            {
+                "what": "Voz (153 caracteres)",
+                "usd": 0.0122,
+                "piece": null
+            },
+            {
+                "what": "Música",
+                "usd": 0.0475,
+                "piece": null
+            }
+        ]
+    },
+    "costs": [
+        {
+            "at": "2026-10-25T13:04:58+00:00",
+            "what": "Agente (plan)",
+            "usd": 0.3094
+        }
+    ]
+}

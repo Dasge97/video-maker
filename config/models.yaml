@@ -1,0 +1,46 @@
+# Catalog of video models. A new model is a new entry here, not code. Read by
+# App\Providers\VideoCatalog.
+#
+# Per entry:
+#   id, label, model, resolution  what the screens show
+#   video.endpoint                fal endpoint of the clips
+#   video.durations               min / max seconds; integers
+#   video.durationAsString        fal enums that expect "5" instead of 5
+#   video.maxReferences           images sent with one clip, at most
+#   video.startImageParam         fal field of the first frame of a clip (the start image made
+#                                 before it): the video opens on it and the model only animates it
+#   video.usdPerSecond            price per second of video
+#   video.secondsPerClip          average time to make one clip
+#
+# MiniMax 480p is left out: it is 480p and its output of 480×832 had to be cut.
+# Prices: fal pricing API (GET https://api.fal.ai/v1/models/pricing), 2026-10-25, in dollars.
+
+models:
+  - id: high
+    label: Alta calidad
+    model: Kling O3 Pro
+    resolution: 1080p        # unconfirmed: fal's page does not state it
+    video:
+      endpoint: fal-ai/kling-video/o3/pro/reference-to-video
+      durations: { min: 3, max: 15 }
+      durationAsString: true
+      maxReferences: 4       # elements + reference images
+      # fal page (llms.txt), 2026-10-23: start_image_url, «image to use as the first frame of the
+      # video». Taken together with elements: first probe of video-maker, 2026-10-25.
+      startImageParam: start_image_url
+      usdPerSecond: 0.14     # fal pricing API, 2026-10-25: the same price as Standard
+      secondsPerClip: 150    # unconfirmed
+
+  - id: balanced
+    label: Equilibrada
+    model: Kling O3 Standard
+    resolution: 720p         # 720x1280: first probe of video-maker, 2026-10-25
+    default: true
+    video:
+      endpoint: fal-ai/kling-video/o3/standard/reference-to-video
+      durations: { min: 3, max: 15 }
+      durationAsString: true
+      maxReferences: 4
+      startImageParam: start_image_url
+      usdPerSecond: 0.14     # fal pricing API, 2026-10-25 (new-studio had 0.084)
+      secondsPerClip: 100    # unconfirmed

@@ -1,0 +1,164 @@
+{
+    "summary": "Te propongo un anuncio de 15 segundos de Brisa con voz en off. Empieza con un plano tipo selfi en el que tú miras a cámara después de probar agua del grifo. Luego van cambiando planos cortos: la botella de cerca, cómo se llena en el grifo y tú bebiendo. Termina con el precio, el envío gratis y la web. De la referencia tomo el arranque mirando a cámara con una pregunta como gancho, los planos de producto muy cerca y los cambios de plano frecuentes.",
+    "reference": {
+        "summary": "Una creadora explica a cámara, en un solo plano tipo selfi, qué es el contenido generado por usuarios. Al final pone como ejemplo un anuncio de un sérum: planos cortos de la creadora con el producto, detalles del tubo y sus ventajas escritas en pantalla.",
+        "rhythm": "Empieza con un plano corto a cámara con una pregunta escrita arriba. Sigue un plano muy largo de explicación (unos 66 s) y cierra con un ejemplo de 5 o 6 planos de 1,5 a 6 s que alternan a la creadora con detalles del producto, siempre con texto en pantalla.",
+        "beats": [
+            {
+                "start": 0,
+                "end": 3.1,
+                "what": "Gancho: la presentadora, en plano selfi desde abajo, habla a cámara. Arriba aparece una pregunta escrita.",
+                "frame": 0
+            },
+            {
+                "start": 3.1,
+                "end": 69.2,
+                "what": "La presentadora sigue hablando a cámara en el mismo plano y explica en qué consiste ese tipo de contenido.",
+                "frame": 1
+            },
+            {
+                "start": 69.2,
+                "end": 73.1,
+                "what": "Ejemplo: una mano sostiene el tubo del sérum cerca de la cámara, con un texto que lo presenta.",
+                "frame": 2
+            },
+            {
+                "start": 73.1,
+                "end": 74.5,
+                "what": "Primerísimo plano del tubo delante de un espejo dorado, con textos sobre lo que hace.",
+                "frame": 3
+            },
+            {
+                "start": 74.5,
+                "end": 78.2,
+                "what": "Una creadora posa a cámara con el tubo junto a la mejilla.",
+                "frame": 4
+            },
+            {
+                "start": 78.2,
+                "end": 79.7,
+                "what": "Detalle: sale crema del tubo sobre un espejo.",
+                "frame": 5
+            },
+            {
+                "start": 79.7,
+                "end": 85.9,
+                "what": "La creadora se toca la cara mirando a cámara mientras aparecen sus ventajas escritas.",
+                "frame": 6
+            }
+        ]
+    },
+    "pieces": [
+        {
+            "kind": "generated_clip",
+            "title": "Gancho",
+            "voice": "¿Tu agua del grifo sabe a cloro?",
+            "plannedSeconds": 3,
+            "transition": "cut",
+            "scene": {
+                "action": "The woman holds a glass of tap water close to the camera, takes a small sip, wrinkles her nose slightly and looks straight into the lens with a doubtful expression.",
+                "framing": "Selfie-style close-up, face and shoulders centered, slightly low angle",
+                "camera": "Handheld phone selfie, subtle natural shake",
+                "lighting": "Soft natural daylight from a kitchen window",
+                "withPerson": true,
+                "startImage": "Selfie-style close-up from a slightly low angle of the woman in a bright modern kitchen, wearing a green t-shirt, holding a clear glass of water near her chin, looking into the camera, white cabinets and plants softly blurred behind her, soft daylight.",
+                "imitateFrame": 0
+            }
+        },
+        {
+            "kind": "generated_clip",
+            "title": "La botella",
+            "voice": "Brisa lleva un filtro de carbón",
+            "plannedSeconds": 3,
+            "transition": "cut",
+            "scene": {
+                "action": "A hand holds a transparent reusable water bottle close to the camera and slowly turns it, showing the dark carbon filter cartridge inside and the light blue cap.",
+                "framing": "Close-up of the bottle filling most of the vertical frame, centered",
+                "camera": "Handheld, slow rotation of the bottle, slight push in",
+                "lighting": "Bright soft daylight, kitchen softly blurred behind",
+                "withPerson": true,
+                "startImage": "Close-up of a hand holding a smooth transparent reusable water bottle with a dark carbon filter cartridge visible inside and a light blue cap, bright kitchen softly blurred in the background, soft daylight.",
+                "imitateFrame": 2
+            }
+        },
+        {
+            "kind": "generated_clip",
+            "title": "Se llena en el grifo",
+            "voice": "que quita el sabor a cloro.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "scene": {
+                "action": "Water flows from a kitchen tap into the transparent bottle with the dark carbon filter inside, the bottle filling up with clear sparkling water.",
+                "framing": "Tight detail shot of the tap and the bottle, centered",
+                "camera": "Static close shot with a slight slow push in",
+                "lighting": "Bright daylight with glints on the water",
+                "withPerson": false,
+                "startImage": "Tight detail shot of a stainless steel kitchen tap pouring clear water into a transparent reusable bottle with a dark carbon filter cartridge inside, white countertop, bright daylight with glints on the water.",
+                "imitateFrame": 5
+            }
+        },
+        {
+            "kind": "generated_clip",
+            "title": "Beber tranquila",
+            "voice": "Llénala y bebe tranquila.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "scene": {
+                "action": "The woman drinks from the transparent bottle, lowers it and smiles relaxed at the camera, holding the bottle next to her face.",
+                "framing": "Medium close-up, face and bottle centered",
+                "camera": "Handheld selfie angle, gentle movement",
+                "lighting": "Soft natural daylight from a kitchen window",
+                "withPerson": true,
+                "startImage": "Medium close-up of the woman in a bright modern kitchen, wearing a green t-shirt, lifting a transparent reusable bottle with a dark carbon filter and light blue cap to her lips, plants and white cabinets softly blurred behind, soft daylight.",
+                "imitateFrame": 4
+            }
+        },
+        {
+            "kind": "text_card",
+            "title": "Precio",
+            "voice": "24,90 euros y envío gratis.",
+            "plannedSeconds": 2.5,
+            "transition": "cut",
+            "card": {
+                "text": "24,90 € · Envío gratis",
+                "background": null
+            }
+        },
+        {
+            "kind": "logo_card",
+            "title": "Llamada a la acción",
+            "voice": "Pídela en brisa.es.",
+            "plannedSeconds": 1.5,
+            "transition": "fade",
+            "logo": {
+                "text": "Pídela en brisa.es",
+                "background": null
+            }
+        }
+    ],
+    "overlays": [
+        {
+            "kind": "hook",
+            "text": "¿Sabor a cloro?",
+            "fromPiece": 1,
+            "toPiece": 1,
+            "position": "top"
+        },
+        {
+            "kind": "label",
+            "text": "Filtro de carbón",
+            "fromPiece": 2,
+            "toPiece": 2,
+            "position": "top"
+        }
+    ],
+    "subtitles": true,
+    "music": {
+        "style": "Pop acústico suave con palmas ligeras",
+        "mood": "Fresco, cercano y optimista"
+    },
+    "questions": [
+        "Has elegido voz en off, así que en el primer plano miras a cámara pero no hablas. ¿Prefieres el modo en el que hablas tú a cámara, como en la referencia?",
+        "Si quieres contar algo más, como cuánto dura el filtro o en qué colores está la botella, ¿me pasas el dato y lo hacemos en 20 o 30 segundos?"
+    ]
+}

@@ -1,0 +1,56 @@
+{% import '_icons.html.twig' as ui %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}video-maker{% endblock %} · video-maker</title>
+    <script>
+        try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
+    </script>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%234F46E5'/%3E%3Cpath d='M9 7v10l8-5z' fill='white'/%3E%3C/svg%3E">
+    <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+<header class="topbar">
+    <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>video-maker</span></a>
+    <nav class="crumbs" aria-label="Migas de pan">
+        {% block crumbs %}{% endblock %}
+    </nav>
+    <div class="topbar-actions">
+        <div class="segmented" role="radiogroup" aria-label="Tema" data-theme-switch>
+            <label title="Claro"><input type="radio" name="theme" value="light"><span class="sr-only">Claro</span>{{ ui.icon('sun', 'icon-16') }}</label>
+            <label title="Oscuro"><input type="radio" name="theme" value="dark"><span class="sr-only">Oscuro</span>{{ ui.icon('moon', 'icon-16') }}</label>
+            <label title="Como el sistema"><input type="radio" name="theme" value="system"><span class="sr-only">Como el sistema</span>{{ ui.icon('monitor', 'icon-16') }}</label>
+        </div>
+        {% block topaction %}<a class="btn btn-primary" href="{{ path('video_new') }}">{{ ui.icon('plus', 'icon-16') }}<span>Nuevo anuncio</span></a>{% endblock %}
+    </div>
+</header>
+<div class="layout">
+    <nav class="sidenav" aria-label="Menú">
+        {% set route = app.request.attributes.get('_route') %}
+        <h4>Crear</h4>
+        <a class="nav-link {{ route == 'video_new' ? 'active' }}" href="{{ path('video_new') }}">{{ ui.icon('plus') }}Nuevo anuncio</a>
+        <a class="nav-link {{ route starts with 'image_' ? 'active' }}" href="{{ path('image_index') }}">{{ ui.icon('sparkles') }}Crear imagen</a>
+        <h4>Tus anuncios</h4>
+        <a class="nav-link {{ route starts with 'video_' and route != 'video_new' ? 'active' }}" href="{{ path('video_list') }}">{{ ui.icon('film') }}Mis vídeos</a>
+    </nav>
+    <main class="main">
+        {% block body %}{% endblock %}
+    </main>
+</div>
+<div class="toasts" aria-live="polite" data-toasts></div>
+<dialog class="dialog" data-confirm>
+    <div class="dialog-body stack-sm">
+        <h2 data-confirm-title></h2>
+        <p class="muted" data-confirm-text></p>
+    </div>
+    <div class="dialog-actions">
+        <button type="button" class="btn" data-confirm-cancel>Cancelar</button>
+        <button type="button" class="btn btn-primary" data-confirm-ok>Confirmar</button>
+    </div>
+</dialog>
+<script src="/app.js"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

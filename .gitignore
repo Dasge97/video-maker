@@ -1,0 +1,24 @@
+
+###> symfony/framework-bundle ###
+/.env.local
+/.env.local.php
+/.env.*.local
+/config/secrets/prod/prod.decrypt.private.php
+/public/bundles/
+/var/
+/vendor/
+###< symfony/framework-bundle ###
+
+###> phpunit/phpunit ###
+/phpunit.xml
+/.phpunit.cache/
+###< phpunit/phpunit ###
+
+.phpunit.cache/
+
+###> video-maker ###
+# Instructions for Claude with internal data of the owner (vault entries, servers): local only.
+/CLAUDE.md
+# Frames and transcript of the third-party video used as reference in the tests: local only.
+/tests/fixtures/*/reference/
+###< video-maker ###

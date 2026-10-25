@@ -1,0 +1,104 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% set input = job.data.input %}
+{% set name = input.brand.name ?: 'Anuncio' %}
+{% set ready = job.status == 'ready' %}
+{% block title %}Vídeo · {{ name }}{% endblock %}
+{% block crumbs %}<a href="{{ path('video_list') }}">Mis vídeos</a><span class="sep">›</span><a href="{{ path('video_show', {id: job.id}) }}">{{ name }}</a><span class="sep">›</span><strong>Vídeo</strong>{% endblock %}
+{% block topaction %}{% if ready %}<a class="btn btn-primary" href="{{ path('video_file', {id: job.id, path: 'out/video.mp4', descargar: 1}) }}">{{ ui.icon('download', 'icon-16') }}<span>Descargar</span></a>{% endif %}{% endblock %}
+{% block body %}
+<nav class="steps" aria-label="Pasos">
+    <span class="done"><span class="n">{{ ui.icon('check', 'icon-16') }}</span>Subir</span>
+    <a class="done" href="{{ path('video_proposal', {id: job.id}) }}"><span class="n">{{ ui.icon('check', 'icon-16') }}</span>Propuesta</a>
+    <span class="on" aria-current="step"><span class="n">3</span>Vídeo</span>
+</nav>
+
+{% if ready %}
+<div class="page-head">
+    <div>
+        <h1>Tu anuncio está listo</h1>
+        <p>{{ job.data.result.durationSeconds|number_format(1, ',') }} segundos en vertical, con voz, subtítulos y música. Descárgalo y súbelo a Instagram como Reel.</p>
+    </div>
+</div>
+<div class="video-layout">
+    <video class="player" src="{{ path('video_file', {id: job.id, path: 'out/video.mp4'}) }}" poster="{{ path('video_file', {id: job.id, path: 'out/poster.jpg'}) }}" controls playsinline preload="metadata"></video>
+    <div class="stack">
+        <section class="card stack">
+            <div class="row">
+                <a class="btn btn-primary btn-lg" href="{{ path('video_file', {id: job.id, path: 'out/video.mp4', descargar: 1}) }}">{{ ui.icon('download', 'icon-16') }}Descargar vídeo</a>
+                <button type="button" class="btn btn-lg" data-post="{{ path('video_edit', {id: job.id}) }}">{{ ui.icon('pencil', 'icon-16') }}<span class="spinner"></span>Editar textos y volver a montar</button>
+            </div>
+            <p class="small muted">Si cambias solo rótulos, tarjetas, música o subtítulos, volver a montar es gratis. Si cambias la voz, se rehacen la voz y los clips cuya duración cambie; lo demás se reutiliza.</p>
+        </section>
+        <section class="card stack">
+            <div class="cost-total num"><span>Coste real</span><span>{{ job.totalCost|number_format(2, ',') }} $</span></div>
+            <ul class="cost-lines num">
+                {% for c in job.data.costs %}<li><span>{{ c.what }}</span><span>{{ c.usd|number_format(3, ',') }} $</span></li>{% endfor %}
+            </ul>
+            <p class="xs muted">Estimado antes de generar: {{ (job.data.estimate.usd ?? 0)|number_format(2, ',') }} $. Incluye lo que costaron el agente y las versiones anteriores.</p>
+        </section>
+        {% for warning in job.data.warnings ?? [] %}
+        <div class="notice notice-warning">{{ ui.icon('alert') }}<p>{{ warning }}</p></div>
+        {% endfor %}
+        <button type="button" class="btn btn-danger" style="align-self: flex-start" data-post="{{ path('video_delete', {id: job.id}) }}" data-confirm-title="¿Borrar este vídeo?" data-confirm-text="Se borran el vídeo, la propuesta y todo lo generado. No se puede deshacer." data-confirm-ok="Borrar" data-danger>{{ ui.icon('trash', 'icon-16') }}<span class="spinner"></span>Borrar vídeo</button>
+    </div>
+</div>
+{% else %}
+<div class="page-head">
+    <div>
+        <h1>Generando tu anuncio</h1>
+        <p>Primero la voz, que marca cuánto dura cada pieza; después las imágenes, los clips y la música, y al final el montaje. Suele tardar entre 5 y 15 minutos. Puedes cerrar esta página: el trabajo sigue.</p>
+    </div>
+</div>
+<div class="video-layout">
+    <section class="card stack">
+        <ul class="progress" data-progress>
+            {% for i in 1..5 %}<li><span class="skeleton" style="width: 20px; height: 20px"></span><span class="skeleton" style="width: 140px; height: 14px"></span></li>{% endfor %}
+        </ul>
+        <div class="notice notice-danger hidden" data-error>{{ ui.icon('alert') }}<div class="stack-sm"><p data-error-text></p>
+            <div class="row">
+                <button type="button" class="btn" data-post="{{ path('video_retry', {id: job.id}) }}" data-reload>{{ ui.icon('refresh', 'icon-16') }}<span class="spinner"></span>Reintentar</button>
+                <button type="button" class="btn btn-ghost" data-post="{{ path('video_edit', {id: job.id}) }}">{{ ui.icon('pencil', 'icon-16') }}<span class="spinner"></span>Volver a la propuesta</button>
+            </div>
+        </div></div>
+        <p class="xs muted" data-waiting></p>
+    </section>
+    <section class="stack">
+        <h2>Imágenes de arranque</h2>
+        <p class="small muted">Aparecen en cuanto están hechas, para que veas pronto si la persona se parece.</p>
+        <div class="thumbs" data-thumbs>
+            {% for i in 1..3 %}<div class="skeleton" style="aspect-ratio: 9/16"></div>{% endfor %}
+        </div>
+    </section>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if not ready %}
+<script>
+(() => {
+  const marks = { done: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>', current: '<span class="spinner"></span>', failed: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>', pending: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>' };
+  const shown = new Set();
+  App.poll('{{ path('video_state', {id: job.id}) }}', (s) => {
+    document.querySelector('[data-progress]').innerHTML = s.steps.map((st) => {
+      const extra = st.name === 'clips' && s.clips ? ` (${s.clips.done} de ${s.clips.total})` : '';
+      return `<li class="${st.state}"><span class="state">${marks[st.state]}</span>${App.escape(st.label + extra)}</li>`;
+    }).join('');
+    const error = document.querySelector('[data-error]');
+    error.classList.toggle('hidden', !s.error);
+    if (s.error) error.querySelector('[data-error-text]').textContent = s.error;
+    document.querySelector('[data-waiting]').textContent = s.waiting ? 'Un proveedor está ocupado: lo volvemos a intentar en unos segundos.' : '';
+    const thumbs = document.querySelector('[data-thumbs]');
+    if (s.images.length && !shown.size) thumbs.innerHTML = '';
+    s.images.filter((u) => !shown.has(u)).forEach((u) => { shown.add(u); thumbs.insertAdjacentHTML('beforeend', `<img src="${u}" alt="Imagen de arranque generada para una pieza" loading="lazy">`); });
+    const imagesDone = s.steps.some((st) => st.name === 'images' && st.state === 'done');
+    if (imagesDone && !s.images.length) thumbs.innerHTML = '<p class="small muted">Este anuncio no necesita imágenes de arranque.</p>';
+    if (s.status === 'ready') { window.location.reload(); return false; }
+    if (s.status === 'proposal') { window.location.href = '{{ path('video_proposal', {id: job.id}) }}'; return false; }
+    return s.status !== 'failed';
+  }, 3000);
+})();
+</script>
+{% endif %}
+{% endblock %}

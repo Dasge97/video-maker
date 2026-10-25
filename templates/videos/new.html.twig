@@ -1,0 +1,317 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block title %}Nuevo anuncio{% endblock %}
+{% block crumbs %}<a href="{{ path('video_list') }}">Mis vídeos</a><span class="sep">›</span><strong>Nuevo anuncio</strong>{% endblock %}
+{% block topaction %}{% endblock %}
+{% block body %}
+<nav class="steps" aria-label="Pasos">
+    <span class="on"><span class="n">1</span>Subir</span>
+    <span><span class="n">2</span>Propuesta</span>
+    <span><span class="n">3</span>Vídeo</span>
+</nav>
+
+<div class="page-head">
+    <div>
+        <h1>Tu próximo anuncio, a partir de uno que te guste</h1>
+        <p>Sube un Reel que funcione, la foto de quien sale y tu logo. El agente imita su ritmo y sus planos con tu mensaje, y te enseña la propuesta con su coste antes de gastar nada.</p>
+    </div>
+</div>
+
+<div class="proposal">
+<form class="stack-lg" data-new-form novalidate>
+    <section class="card stack">
+        <div>
+            <h2>Vídeo de referencia</h2>
+            <p class="muted small">Un anuncio vertical de hasta 90 segundos. Se copia su estructura y su ritmo, nunca sus textos ni sus personas.</p>
+        </div>
+        <div class="segmented" role="radiogroup" aria-label="Cómo das la referencia">
+            <label><input type="radio" name="referenceKind" value="file" checked>Subir fichero</label>
+            <label><input type="radio" name="referenceKind" value="url">Pegar enlace</label>
+        </div>
+        <div class="field" data-reference-file>
+            <label for="reference">Fichero de vídeo</label>
+            <div class="drop" data-drop>
+                <div class="thumb">{{ ui.icon('film') }}</div>
+                <div class="grow"><p class="name" data-name>Ningún fichero elegido</p><p class="xs muted">mp4, mov o webm · hasta 200 MB</p></div>
+                <label class="btn" for="reference">{{ ui.icon('upload', 'icon-16') }}Elegir vídeo</label>
+                <input class="sr-only" type="file" id="reference" name="reference" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm">
+            </div>
+            <p class="error" data-error-for="reference"></p>
+        </div>
+        <div class="field hidden" data-reference-url>
+            <label for="referenceUrl">Enlace público</label>
+            <input class="input" type="url" id="referenceUrl" name="referenceUrl" placeholder="https://www.instagram.com/reel/…" inputmode="url">
+            <p class="help">Instagram, TikTok o YouTube. Si Instagram pide iniciar sesión, descarga el vídeo y súbelo como fichero.</p>
+        </div>
+    </section>
+
+    <section class="card stack">
+        <div>
+            <h2>Quién sale y de qué marca</h2>
+            <p class="muted small">Sube tus imágenes o elige una de las que has creado.</p>
+        </div>
+        {% for field in [{name: 'person', title: 'Foto de la persona', help: 'JPEG, PNG o WebP. Sale mejor de frente y de medio cuerpo, con la cara bien visible.', kind: 'person', optional: false}, {name: 'logo', title: 'Logo (opcional)', help: 'Mejor PNG con fondo transparente. De él salen los colores de la marca.', kind: 'logo', optional: true}] %}
+        <div class="field">
+            <label for="{{ field.name }}">{{ field.title }}</label>
+            <div class="drop" data-drop data-image-field="{{ field.name }}">
+                <div class="thumb {{ field.name == 'logo' ? 'contain' }}" data-thumb>{{ ui.icon(field.name == 'logo' ? 'sparkles' : 'image') }}</div>
+                <div class="grow"><p class="name" data-name>Ninguna imagen elegida</p><p class="xs muted">{{ field.help }}</p></div>
+                <div class="row">
+                    <label class="btn" for="{{ field.name }}">{{ ui.icon('upload', 'icon-16') }}Subir</label>
+                    <button type="button" class="btn btn-ghost" data-pick="{{ field.name }}" data-kind="{{ field.kind }}">{{ ui.icon('library', 'icon-16') }}Mis imágenes</button>
+                </div>
+                <input class="sr-only" type="file" id="{{ field.name }}" name="{{ field.name }}" accept="image/jpeg,image/png,image/webp">
+                <input type="hidden" name="{{ field.name }}Library" value="">
+            </div>
+            <p class="error" data-error-for="{{ field.name }}"></p>
+        </div>
+        {% endfor %}
+        <p class="small muted">¿No tienes foto o logo? <a href="{{ path('image_index') }}">Créalos con IA</a> y vuelve aquí.</p>
+        <div class="grid-2">
+            <div class="field">
+                <label for="brandName">Nombre de la marca</label>
+                <input class="input" id="brandName" name="brandName" maxlength="80" autocomplete="organization">
+            </div>
+            <div class="field">
+                <label for="font">Tipografía de los textos</label>
+                <select class="select" id="font" name="font">
+                    {% for font in fonts %}<option value="{{ font }}" {{ font == 'Poppins' ? 'selected' }}>{{ font }}</option>{% endfor %}
+                </select>
+            </div>
+        </div>
+        <div class="field">
+            <span class="label">Colores de la marca</span>
+            <div class="row">
+                <input class="input input-color" type="color" name="color1" value="#4F46E5" aria-label="Color principal" data-color>
+                <input class="input input-color" type="color" name="color2" value="#FFFFFF" aria-label="Color secundario" data-color>
+                <p class="help" data-colors-help>Al subir el logo te proponemos sus dos colores principales.</p>
+            </div>
+        </div>
+        <div class="field">
+            <label for="forbiddenWords">Palabras prohibidas (opcional)</label>
+            <input class="input" id="forbiddenWords" name="forbiddenWords" placeholder="barato, oferta, gratis">
+            <p class="help">Separadas por comas. Tampoco saldrán en otro género o número.</p>
+        </div>
+    </section>
+
+    <section class="card stack">
+        <div>
+            <h2>Qué anuncias</h2>
+            <p class="muted small">El agente no inventa cifras: si quieres que salga un precio o una oferta, escríbelo aquí.</p>
+        </div>
+        <div class="field">
+            <label for="product">Producto, mensaje y llamada a la acción</label>
+            <textarea class="textarea" id="product" name="product" maxlength="1000" rows="5" placeholder="Producto o servicio, el mensaje principal, el precio u oferta si quieres que salga, y qué debe hacer quien lo vea" data-counted></textarea>
+            <div class="row-between"><p class="error" data-error-for="product"></p><p class="xs muted" data-counter>0 / 1.000</p></div>
+        </div>
+        <div class="field">
+            <label for="note">Qué te gusta de la referencia (opcional)</label>
+            <textarea class="textarea" id="note" name="note" maxlength="1000" rows="2" placeholder="El gancho del principio, los cortes rápidos, el plano final…"></textarea>
+        </div>
+    </section>
+
+    <section class="card stack">
+        <h2>Cómo se cuenta</h2>
+        <fieldset class="fieldset">
+            <legend>Quién habla</legend>
+            <div class="choice-grid">
+                <label class="choice"><input type="radio" name="mode" value="talking_person" checked>{{ ui.icon('mic') }}<span><strong>La persona habla a cámara</strong><span class="small muted">Sale la persona de la foto diciendo el mensaje, con planos de apoyo entre medias.</span></span></label>
+                <label class="choice"><input type="radio" name="mode" value="voice_over">{{ ui.icon('message') }}<span><strong>Voz en off</strong><span class="small muted">Un narrador cuenta el mensaje sobre planos generados. La persona puede salir sin hablar.</span></span></label>
+            </div>
+        </fieldset>
+        <div class="field">
+            <label for="voiceId" data-voice-label>Voz de la persona</label>
+            <div class="row">
+                <select class="select" id="voiceId" name="voiceId" style="flex:1; min-width: 220px" data-voices>
+                    <option value="{{ defaultVoice }}">Cargando voces…</option>
+                </select>
+                <button type="button" class="btn" data-play-voice>{{ ui.icon('play', 'icon-16') }}<span class="spinner"></span>Escuchar</button>
+            </div>
+            <p class="help" data-voices-help>Las voces en castellano salen primero.</p>
+            <audio data-voice-audio class="hidden"></audio>
+        </div>
+        <div class="grid-2">
+            <fieldset class="fieldset">
+                <legend>Duración</legend>
+                <div class="segmented">
+                    {% for d in durations %}<label><input type="radio" name="durationSeconds" value="{{ d }}" {{ d == 15 ? 'checked' }}>{{ d }} s</label>{% endfor %}
+                </div>
+            </fieldset>
+            <fieldset class="fieldset">
+                <legend>Calidad de los clips</legend>
+                <div class="segmented">
+                    {% for m in models %}<label title="{{ m.model }}"><input type="radio" name="model" value="{{ m.id }}" {{ m.default ? 'checked' }}>{{ m.label }}</label>{% endfor %}
+                </div>
+            </fieldset>
+        </div>
+    </section>
+
+    <div class="row">
+        <button type="submit" class="btn btn-primary btn-lg" data-submit><span class="spinner"></span>{{ ui.icon('sparkles', 'icon-16') }}Preparar propuesta</button>
+        <p class="small muted">Preparar la propuesta solo cuesta la llamada al agente: unos 0,30 $.</p>
+    </div>
+</form>
+
+<aside class="card stack">
+    <h2>Para que salga mejor</h2>
+    <ul class="small muted stack-sm" style="padding-left: 18px; margin: 0">
+        <li>Elige una referencia con planos claros y un gancho fuerte en los primeros segundos.</li>
+        <li>La foto de la persona, de frente y bien iluminada: la cara del vídeo sale de ella.</li>
+        <li>Escribe el precio u oferta tal como quieres que se lea.</li>
+        <li>15 segundos dan para un mensaje y una llamada a la acción.</li>
+    </ul>
+</aside>
+</div>
+
+<dialog class="dialog" data-picker style="max-width: min(640px, calc(100vw - 32px))">
+    <div class="dialog-body stack">
+        <div class="row-between"><h2>Mis imágenes</h2><a class="small" href="{{ path('image_index') }}">Crear otra</a></div>
+        <div class="picker" data-picker-grid></div>
+        <p class="muted small hidden" data-picker-empty>Todavía no has creado imágenes. <a href="{{ path('image_index') }}">Crea la primera</a>.</p>
+    </div>
+    <div class="dialog-actions"><button type="button" class="btn" data-picker-close>Cerrar</button></div>
+</dialog>
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.querySelector('[data-new-form]');
+  const params = new URLSearchParams(location.search);
+
+  // Reference: file or link.
+  form.querySelectorAll('input[name="referenceKind"]').forEach((r) => r.addEventListener('change', () => {
+    const url = form.referenceKind.value === 'url';
+    form.querySelector('[data-reference-file]').classList.toggle('hidden', url);
+    form.querySelector('[data-reference-url]').classList.toggle('hidden', !url);
+  }));
+
+  // Files: name and preview.
+  form.querySelectorAll('[data-drop]').forEach((drop) => {
+    const input = drop.querySelector('input[type="file"]');
+    input.addEventListener('change', () => {
+      const file = input.files[0];
+      drop.querySelector('[data-name]').textContent = file ? file.name : 'Ningún fichero elegido';
+      drop.classList.toggle('has-file', !!file);
+      const library = drop.querySelector('input[type="hidden"]');
+      if (library) library.value = '';
+      const thumb = drop.querySelector('[data-thumb]');
+      if (thumb && file) { thumb.style.backgroundImage = `url(${URL.createObjectURL(file)})`; thumb.innerHTML = ''; }
+      if (input.name === 'logo' && file) colorsOf({ logo: file });
+    });
+  });
+
+  // Colours of the logo.
+  async function colorsOf(payload) {
+    const data = new FormData();
+    Object.entries(payload).forEach(([k, v]) => data.append(k, v));
+    const result = await App.postForm('{{ path('logo_colors') }}', data);
+    const colors = result.ok ? result.data.colors : [];
+    const inputs = form.querySelectorAll('[data-color]');
+    colors.forEach((c, i) => { if (inputs[i]) inputs[i].value = c.toLowerCase(); });
+    form.querySelector('[data-colors-help]').textContent = colors.length ? 'Son los colores de tu logo. Puedes cambiarlos.' : 'No hemos sacado colores claros del logo: elígelos tú.';
+  }
+
+  // Library picker.
+  const picker = document.querySelector('[data-picker]');
+  let pickFor = null;
+  function choose(field, image) {
+    const drop = form.querySelector(`[data-image-field="${field}"]`);
+    drop.querySelector('input[type="hidden"]').value = image.hash;
+    drop.querySelector('input[type="file"]').value = '';
+    drop.querySelector('[data-name]').textContent = image.prompt;
+    drop.classList.add('has-file');
+    const thumb = drop.querySelector('[data-thumb]');
+    thumb.style.backgroundImage = `url(${image.url})`;
+    thumb.innerHTML = '';
+    if (field === 'logo') colorsOf({ hash: image.hash });
+  }
+  let library = null;
+  async function loadLibrary() {
+    if (library) return library;
+    const result = await App.request('{{ path('image_list') }}');
+    library = result.ok ? result.data : [];
+    return library;
+  }
+  form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', async () => {
+    pickFor = b.dataset.pick;
+    const images = (await loadLibrary()).filter((i) => i.kind === b.dataset.kind || i.kind === 'other');
+    const grid = picker.querySelector('[data-picker-grid]');
+    grid.innerHTML = images.map((i) => `<button type="button" data-hash="${i.hash}" title="${App.escape(i.prompt)}"><img src="${i.url}" alt="${App.escape(i.prompt)}" loading="lazy"></button>`).join('');
+    picker.querySelector('[data-picker-empty]').classList.toggle('hidden', images.length > 0);
+    picker.showModal();
+  }));
+  picker.querySelector('[data-picker-grid]').addEventListener('click', (e) => {
+    const button = e.target.closest('[data-hash]');
+    if (!button) return;
+    choose(pickFor, library.find((i) => i.hash === button.dataset.hash));
+    picker.close();
+  });
+  picker.querySelector('[data-picker-close]').addEventListener('click', () => picker.close());
+  (async () => {
+    for (const field of ['person', 'logo']) {
+      const hash = params.get(field);
+      const image = hash && (await loadLibrary()).find((i) => i.hash === hash);
+      if (image) choose(field, image);
+    }
+  })();
+
+  // Voices.
+  const select = form.querySelector('[data-voices]');
+  const help = form.querySelector('[data-voices-help]');
+  (async () => {
+    const result = await App.request('{{ path('voice_list') }}');
+    if (!result.ok) {
+      select.innerHTML = '<option value="{{ defaultVoice }}">Voz por defecto</option>';
+      help.textContent = `No se han podido cargar las voces: ${App.firstError(result.errors)} Se usará la voz por defecto.`;
+      return;
+    }
+    const spanish = result.data.filter((v) => v.spanish);
+    const others = result.data.filter((v) => !v.spanish);
+    const option = (v) => `<option value="${v.id}" ${v.id === '{{ defaultVoice }}' ? 'selected' : ''}>${App.escape(v.name)}${v.detail ? ' · ' + App.escape(v.detail) : ''}</option>`;
+    select.innerHTML = (spanish.length ? `<optgroup label="En castellano">${spanish.map(option).join('')}</optgroup>` : '') + `<optgroup label="Otras voces">${others.map(option).join('')}</optgroup>`;
+  })();
+  const audio = form.querySelector('[data-voice-audio]');
+  form.querySelector('[data-play-voice]').addEventListener('click', async (e) => {
+    const button = e.currentTarget;
+    await App.busy(button, () => new Promise((resolve) => {
+      audio.src = `/voces/${select.value}/muestra`;
+      audio.oncanplay = () => { audio.play(); resolve(); };
+      audio.onerror = () => { App.toast('No se ha podido escuchar esta voz.', 'danger'); resolve(); };
+    }));
+  });
+  form.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', () => {
+    form.querySelector('[data-voice-label]').textContent = form.mode.value === 'voice_over' ? 'Voz del narrador' : 'Voz de la persona';
+  }));
+
+  // Counter of the product.
+  const product = form.querySelector('[data-counted]');
+  product.addEventListener('input', () => { form.querySelector('[data-counter]').textContent = `${product.value.length.toLocaleString('es-ES')} / 1.000`; });
+
+  // Errors on leaving a field.
+  form.addEventListener('focusout', (e) => {
+    if (e.target.name === 'product' && e.target.value.trim().length > 0 && e.target.value.trim().length < 10) showError('product', 'Cuéntalo con algo más de detalle (10 caracteres como mínimo).');
+  });
+  function showError(field, message) {
+    const slot = form.querySelector(`[data-error-for="${field}"]`);
+    if (slot) slot.textContent = message || '';
+    const input = form.querySelector(`[name="${field}"]`);
+    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    form.querySelectorAll('[data-error-for]').forEach((s) => { s.textContent = ''; });
+    const data = new FormData(form);
+    if (form.referenceKind.value === 'url') data.delete('reference'); else data.delete('referenceUrl');
+    const result = await App.busy(form.querySelector('[data-submit]'), () => App.postForm('{{ path('video_create') }}', data));
+    if (!result.ok) {
+      Object.entries(result.errors).forEach(([field, message]) => showError(field, message));
+      App.toast(result.status === 422 ? 'Revisa los campos marcados.' : App.firstError(result.errors), 'danger');
+      return;
+    }
+    window.location.href = result.data.url;
+  });
+})();
+</script>
+{% endblock %}

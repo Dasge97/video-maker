@@ -1,0 +1,129 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Plan de un anuncio vertical",
+  "description": "Lo que entrega el agente con la herramienta submit_plan. Lo consumen PlanChecks, la pantalla de la propuesta y los pasos de generación.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["summary", "reference", "pieces", "overlays", "subtitles", "music"],
+  "properties": {
+    "summary": {
+      "type": "string",
+      "maxLength": 800,
+      "description": "Para la persona, de 1 a 4 frases: qué vídeo propones y qué tomas de la referencia. Sin jerga."
+    },
+    "reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["summary", "rhythm", "beats"],
+      "properties": {
+        "summary": { "type": "string", "maxLength": 600 },
+        "rhythm": { "type": "string", "maxLength": 300, "description": "Ritmo y montaje: cuántos planos, de qué duración, cómo empieza y cómo acaba." },
+        "beats": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 16,
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": ["start", "end", "what", "frame"],
+            "properties": {
+              "start": { "type": "number", "minimum": 0 },
+              "end": { "type": "number", "minimum": 0 },
+              "what": { "type": "string", "maxLength": 300, "description": "Qué se ve y qué se oye. Personas por su papel, nunca por sus rasgos." },
+              "frame": { "type": ["integer", "null"], "minimum": 0, "description": "Número del fotograma que mejor lo muestra." }
+            }
+          }
+        }
+      }
+    },
+    "pieces": {
+      "type": "array",
+      "minItems": 2,
+      "maxItems": 10,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "title", "voice", "plannedSeconds", "transition"],
+        "properties": {
+          "kind": { "enum": ["talking_person", "generated_clip", "image_motion", "text_card", "logo_card"] },
+          "title": { "type": "string", "maxLength": 40, "description": "Nombre corto para la persona: Gancho, Problema, Solución, Llamada a la acción…" },
+          "voice": { "type": ["string", "null"], "maxLength": 300, "description": "Trozo de la voz que suena sobre esta pieza. null si no hay voz." },
+          "plannedSeconds": { "type": "number", "minimum": 1.5, "maximum": 10 },
+          "transition": { "enum": ["cut", "fade"], "description": "Paso a la pieza siguiente." },
+          "scene": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Solo en talking_person, generated_clip e image_motion.",
+            "required": ["action", "framing", "camera", "lighting", "withPerson", "startImage", "imitateFrame"],
+            "properties": {
+              "action": { "type": "string", "maxLength": 800, "description": "Solo imagen observable. Nunca textos, rótulos, logos ni tipografías." },
+              "framing": { "type": "string", "maxLength": 120 },
+              "camera": { "type": "string", "maxLength": 120 },
+              "lighting": { "type": "string", "maxLength": 120 },
+              "withPerson": { "type": "boolean", "description": "Sale la persona de la foto." },
+              "startImage": {
+                "type": ["string", "null"],
+                "maxLength": 800,
+                "description": "Primer fotograma que se genera antes con el modelo de imágenes. Obligatorio en talking_person e image_motion. En generated_clip, cuando se ve una pantalla o hay que fijar la composición."
+              },
+              "imitateFrame": { "type": ["integer", "null"], "minimum": 0, "description": "Fotograma de la referencia cuyo movimiento y encuadre se imitan." }
+            }
+          },
+          "motion": { "enum": ["zoom_in", "zoom_out", "pan_left", "pan_right"], "description": "Solo en image_motion." },
+          "card": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Solo en text_card.",
+            "required": ["text", "background"],
+            "properties": {
+              "text": { "type": "string", "minLength": 1, "maxLength": 60 },
+              "background": { "type": ["string", "null"], "maxLength": 300, "description": "Fondo generado, sin textos ni logos. null: color liso de la marca." }
+            }
+          },
+          "logo": {
+            "type": "object",
+            "additionalProperties": false,
+            "description": "Solo en logo_card.",
+            "required": ["text", "background"],
+            "properties": {
+              "text": { "type": "string", "maxLength": 40, "description": "Texto corto bajo el logo, o vacío." },
+              "background": { "type": ["string", "null"], "maxLength": 300 }
+            }
+          }
+        }
+      }
+    },
+    "overlays": {
+      "type": "array",
+      "maxItems": 6,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["kind", "text", "fromPiece", "toPiece", "position"],
+        "properties": {
+          "kind": { "enum": ["hook", "label", "price", "cta", "logo"] },
+          "text": { "type": "string", "maxLength": 40, "description": "Vacío en kind logo." },
+          "fromPiece": { "type": "integer", "minimum": 1 },
+          "toPiece": { "type": "integer", "minimum": 1 },
+          "position": { "enum": ["top", "center", "bottom"] }
+        }
+      }
+    },
+    "subtitles": { "type": "boolean" },
+    "music": {
+      "type": ["object", "null"],
+      "additionalProperties": false,
+      "required": ["style", "mood"],
+      "properties": {
+        "style": { "type": "string", "maxLength": 120 },
+        "mood": { "type": "string", "maxLength": 120 }
+      }
+    },
+    "questions": {
+      "type": "array",
+      "maxItems": 3,
+      "items": { "type": "string", "maxLength": 300 },
+      "description": "Lo que propones a la persona y no has hecho: más duración, otro dato del producto. Opcional."
+    }
+  }
+}

@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
+
+parameters:
+    app.jobs_dir: '%kernel.project_dir%/var/jobs'
+    app.library_dir: '%kernel.project_dir%/var/library'
+
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+        bind:
+            string $jobsDir: '%app.jobs_dir%'
+            string $libraryDir: '%app.library_dir%'
+            string $promptsDir: '%kernel.project_dir%/prompts'
+
+    App\:
+        resource: '../src/'
+
+    App\Reference\Transcriber:
+        arguments:
+            $url: '%env(AIHUB_URL)%'
+            $apiKey: '%env(AIHUB_API_KEY)%'
+
+    App\Reference\VideoTools:
+        arguments:
+            $maxBytes: 209715200
+            $maxSeconds: 90
+
+when@test:
+    parameters:
+        app.jobs_dir: '%kernel.cache_dir%/jobs'
+        app.library_dir: '%kernel.cache_dir%/library'

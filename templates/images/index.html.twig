@@ -1,0 +1,105 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block title %}Crear imagen{% endblock %}
+{% block crumbs %}<strong>Crear imagen</strong>{% endblock %}
+{% block body %}
+<div class="page-head">
+    <div>
+        <h1>Crea la foto o el logo que te falta</h1>
+        <p>Describe la imagen y la generamos con IA. Después úsala como la persona o el logo de tu anuncio. También puedes partir de una imagen tuya para retocarla.</p>
+    </div>
+</div>
+
+<div class="create-layout">
+<section class="card stack" style="align-self: start">
+    <form class="stack" data-create-form novalidate>
+        <fieldset class="fieldset">
+            <legend>Qué imagen es</legend>
+            <div class="segmented">
+                {% for key, k in kinds %}<label><input type="radio" name="kind" value="{{ key }}" {{ (preset == key or (preset not in kinds|keys and loop.first)) ? 'checked' }}>{{ k.label }}</label>{% endfor %}
+            </div>
+        </fieldset>
+        <div class="field">
+            <label for="prompt">Descripción</label>
+            <textarea class="textarea" id="prompt" name="prompt" rows="5" maxlength="2000" placeholder="Mujer de unos 35 años, pelo castaño recogido, camisa blanca, sonriendo en una cafetería luminosa"></textarea>
+            <p class="help" data-kind-help></p>
+            <p class="error" data-error-for="prompt"></p>
+        </div>
+        <div class="field">
+            <label for="source">Imagen de partida (opcional)</label>
+            <input class="input" type="file" id="source" name="source" accept="image/jpeg,image/png,image/webp">
+            <p class="help">Si la subes, se retoca esa imagen en vez de crear una desde cero.</p>
+            <p class="error" data-error-for="source"></p>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg btn-block" data-submit><span class="spinner"></span>{{ ui.icon('sparkles', 'icon-16') }}Generar imagen</button>
+        <p class="xs muted">Cada imagen cuesta unos {{ price|number_format(2, ',') }} $ y tarda hasta un minuto. Pedir la misma descripción otra vez no se cobra.</p>
+    </form>
+</section>
+
+<section>
+    <nav class="tabs" aria-label="Filtrar por tipo">
+        <a class="tab {{ kind is null ? 'on' }}" href="{{ path('image_index') }}">Todas <span class="badge num">{{ counts.todas }}</span></a>
+        {% for key, k in kinds %}<a class="tab {{ kind == key ? 'on' }}" href="{{ path('image_index', {tipo: key}) }}">{{ k.label }} <span class="badge num">{{ counts[key] }}</span></a>{% endfor %}
+    </nav>
+    <div class="gallery" data-gallery>
+        <div class="tile hidden" data-creating><div class="media skeleton"></div><div class="body"><div class="skeleton" style="height: 14px"></div><div class="skeleton" style="height: 14px; width: 60%"></div></div></div>
+        {% for image in images %}
+        {{ _self.tile(image) }}
+        {% endfor %}
+    </div>
+    {% if images is empty %}
+    <div class="empty" data-empty>
+        {{ ui.icon('image') }}
+        <h2>Tu primera imagen está a una frase</h2>
+        <p>Describe a la persona de tu anuncio o tu logo, y aparecerá aquí lista para usar.</p>
+    </div>
+    {% endif %}
+</section>
+</div>
+{% endblock %}
+
+{% macro tile(image) %}
+{% import '_icons.html.twig' as ui %}
+<article class="tile" data-hash="{{ image.hash }}">
+    <div class="media {{ image.kind != 'person' ? 'square' }}"><img src="{{ path('image_file', {hash: image.hash}) }}" alt="{{ image.prompt }}" loading="lazy"></div>
+    <div class="body">
+        <p class="title">{{ image.prompt }}</p>
+        <p class="xs muted">{{ image.createdAt|date('d/m/Y H:i') }} · {{ image.usd|number_format(3, ',') }} $</p>
+        <div class="actions">
+            <a class="btn" href="{{ path('video_new', {person: image.hash}) }}">Usar como foto</a>
+            <a class="btn" href="{{ path('video_new', {logo: image.hash}) }}">Usar como logo</a>
+            <button type="button" class="btn btn-danger" aria-label="Borrar imagen" data-post="{{ path('image_delete', {hash: image.hash}) }}" data-confirm-title="¿Borrar esta imagen?" data-confirm-text="Los vídeos que ya la usan la conservan." data-confirm-ok="Borrar" data-danger data-reload>{{ ui.icon('trash', 'icon-16') }}<span class="spinner"></span></button>
+        </div>
+    </div>
+</article>
+{% endmacro %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.querySelector('[data-create-form]');
+  const hints = { person: 'Le añadimos «retrato realista, de frente, de medio cuerpo, mirando a cámara».', logo: 'Le añadimos «logotipo plano y simple, fondo transparente».', other: 'Se genera tal cual la describes.' };
+  const updateHint = () => { form.querySelector('[data-kind-help]').textContent = hints[form.kind.value]; };
+  form.querySelectorAll('input[name="kind"]').forEach((r) => r.addEventListener('change', updateHint));
+  updateHint();
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    form.querySelectorAll('[data-error-for]').forEach((s) => { s.textContent = ''; });
+    const creating = document.querySelector('[data-creating]');
+    creating.classList.remove('hidden');
+    document.querySelector('[data-gallery]').prepend(creating);
+    document.querySelector('[data-empty]')?.classList.add('hidden');
+    const result = await App.busy(form.querySelector('[data-submit]'), () => App.postForm('{{ path('image_create') }}', form));
+    creating.classList.add('hidden');
+    if (!result.ok) {
+      Object.entries(result.errors).forEach(([field, message]) => { const slot = form.querySelector(`[data-error-for="${field}"]`); if (slot) slot.textContent = message; });
+      App.toast(App.firstError(result.errors), 'danger');
+      return;
+    }
+    App.toast('Imagen creada. Ya puedes usarla en un anuncio.', 'success');
+    window.location.reload();
+  });
+})();
+</script>
+{% endblock %}

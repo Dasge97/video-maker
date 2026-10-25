@@ -1,0 +1,35 @@
+# Sound of the montage: voice and music with ElevenLabs, and the talking person with Kling AI
+# Avatar on fal.ai. Read by App\Sound\SoundCatalog. Prices in dollars.
+#
+# Values marked "unconfirmed" must be checked against the provider before the first real run.
+
+voice:
+  # https://elevenlabs.io/docs/api-reference/text-to-speech/convert-with-timestamps
+  modelId: eleven_multilingual_v2
+  languageCode: es
+  # The documentation says language_code «is not supported for multilingual_v2 models»: the
+  # model reads the language from the text, which is always Spanish. Set to true with a model
+  # that accepts it (Turbo or Flash v2.5).
+  sendLanguageCode: false
+  outputFormat: mp3_44100_128
+  # ElevenLabs API pricing page (October 2026): Multilingual v2, per 1000 characters.
+  usdPer1000Chars: 0.08      # unconfirmed: a paid plan bills from its included characters
+  # Voice when the person has not chosen one: «Audicion — Sara Martin», native Spanish
+  # (peninsular), chosen by the person on 2026-10-25. «Audicion — Selena» was the other option.
+  defaultVoiceId: gD1IexrzCvsXPHUuT0s3
+
+music:
+  # https://elevenlabs.io/docs/api-reference/music/compose
+  modelId: music_v1
+  outputFormat: mp3_44100_128
+  usdPerMinute: 0.15         # unconfirmed: ElevenLabs API pricing page, October 2026
+  minSeconds: 3              # music_length_ms 3000 to 600000
+  defaultStyle: Pop alegre y luminoso
+  # Volume of the music under the voice (the sidechain lowers it further while someone speaks).
+  volume: 0.35
+
+avatar:
+  default: standard
+  models:
+    standard: { endpoint: fal-ai/kling-video/ai-avatar/v2/standard, usdPerSecond: 0.0562, minSeconds: 2, maxSeconds: 10 }  # fal pricing API, 2026-10-25
+    pro:      { endpoint: fal-ai/kling-video/ai-avatar/v2/pro, usdPerSecond: 0.115, minSeconds: 2, maxSeconds: 10 }        # fal pricing API, 2026-10-25

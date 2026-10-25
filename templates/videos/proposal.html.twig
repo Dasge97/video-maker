@@ -1,0 +1,332 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% set input = job.data.input %}
+{% set name = input.brand.name ?: 'Anuncio' %}
+{% set kindNames = {talking_person: 'Persona a cámara', generated_clip: 'Clip', image_motion: 'Imagen con movimiento', text_card: 'Tarjeta de texto', logo_card: 'Logo'} %}
+{% set phase = job.status == 'failed' ? job.data.failedIn : job.status %}
+{% set editable = job.status == 'proposal' %}
+{% block title %}Propuesta · {{ name }}{% endblock %}
+{% block crumbs %}<a href="{{ path('video_list') }}">Mis vídeos</a><span class="sep">›</span><a href="{{ path('video_show', {id: job.id}) }}">{{ name }}</a><span class="sep">›</span><strong>Propuesta</strong>{% endblock %}
+{% block topaction %}{% endblock %}
+{% block body %}
+<nav class="steps" aria-label="Pasos">
+    <span class="done"><span class="n">{{ ui.icon('check', 'icon-16') }}</span>Subir</span>
+    <span class="on" aria-current="step"><span class="n">2</span>Propuesta</span>
+    {% if job.data.result or phase == 'generating' or job.status == 'ready' %}<a href="{{ path('video_video', {id: job.id}) }}"><span class="n">3</span>Vídeo</a>{% else %}<span><span class="n">3</span>Vídeo</span>{% endif %}
+</nav>
+
+{% if plan is null or phase == 'analysing' %}
+{# Still analysing, or the analysis failed: the steps of the worker. #}
+<div class="page-head">
+    <div>
+        <h1>Preparando tu propuesta</h1>
+        <p>El agente mira la referencia plano a plano y escribe un anuncio con tu mensaje. Suele tardar uno o dos minutos; puedes cerrar esta página y volver luego.</p>
+    </div>
+</div>
+<div class="card stack" style="max-width: 640px" data-progress-card>
+    <ul class="progress" data-progress>
+        {% for i in 1..4 %}<li><span class="skeleton" style="width: 20px; height: 20px"></span><span class="skeleton" style="width: 180px; height: 14px"></span></li>{% endfor %}
+    </ul>
+    <div class="notice notice-danger hidden" data-error>{{ ui.icon('alert') }}<div class="stack-sm"><p data-error-text></p><button type="button" class="btn" data-post="{{ path('video_retry', {id: job.id}) }}" data-reload>{{ ui.icon('refresh', 'icon-16') }}<span class="spinner"></span>Reintentar</button></div></div>
+    <p class="xs muted" data-waiting></p>
+</div>
+{% else %}
+
+<div class="page-head">
+    <div>
+        <div class="row" style="margin-bottom: var(--space-2)">
+            <span class="badge badge-primary">Versión {{ job.data.plan.version }}{{ job.data.plan.by == 'person' ? ' · editada por ti' : '' }}</span>
+            <span class="badge">{{ input.durationSeconds }} s · {{ input.mode == 'voice_over' ? 'Voz en off' : 'Persona a cámara' }}</span>
+        </div>
+        <h1>Tu propuesta</h1>
+        <p>{{ plan.summary }}</p>
+    </div>
+</div>
+
+{% if job.status == 'revising' %}
+<div class="notice" style="margin-bottom: var(--space-6)" data-revising>{{ ui.icon('clock') }}<p><strong>El agente está aplicando tu cambio.</strong> La propuesta se actualizará sola en cuanto termine.</p></div>
+{% elseif job.status == 'failed' %}
+<div class="notice notice-danger" style="margin-bottom: var(--space-6)">{{ ui.icon('alert') }}<div class="stack-sm"><p>{{ job.data.error.message }}</p><button type="button" class="btn" data-post="{{ path('video_retry', {id: job.id}) }}" data-reload>{{ ui.icon('refresh', 'icon-16') }}<span class="spinner"></span>Reintentar</button></div></div>
+{% elseif not editable %}
+<div class="notice" style="margin-bottom: var(--space-6)">{{ ui.icon('info') }}<p>Esta propuesta ya se está usando para generar el vídeo. Para cambiar textos, ve a <a href="{{ path('video_video', {id: job.id}) }}">Vídeo</a> y pulsa «Editar textos y volver a montar».</p></div>
+{% endif %}
+{% for warning in job.data.warnings ?? [] %}
+<div class="notice notice-warning" style="margin-bottom: var(--space-4)">{{ ui.icon('alert') }}<p>{{ warning }}</p></div>
+{% endfor %}
+
+<div class="proposal">
+<form class="stack-lg" data-plan-form novalidate>
+    <div class="notice notice-danger hidden" data-errors>{{ ui.icon('alert') }}<div><p><strong>Hay cosas que corregir antes de guardar:</strong></p><ul class="small" style="margin: var(--space-1) 0 0; padding-left: 18px" data-errors-list></ul></div></div>
+
+    <section class="card stack">
+        <h2>Lo que tomamos de la referencia</h2>
+        <p>{{ plan.reference.summary }}</p>
+        <p class="small muted">{{ plan.reference.rhythm }}</p>
+        <div class="beats">
+            {% for beat in plan.reference.beats %}
+            <figure class="beat" style="margin: 0">
+                {% if beat.frame is not null and frames[beat.frame] is defined %}
+                <img src="{{ path('video_file', {id: job.id, path: 'reference/' ~ frames[beat.frame].path}) }}" alt="Fotograma {{ beat.frame }} de la referencia: {{ beat.what }}" loading="lazy">
+                {% else %}<div class="skeleton" style="aspect-ratio: 9/16; animation: none"></div>{% endif %}
+                <p><span class="num">{{ beat.start|number_format(1, ',') }}–{{ beat.end|number_format(1, ',') }} s</span> · {{ beat.what }}</p>
+            </figure>
+            {% endfor %}
+        </div>
+    </section>
+
+    <section class="stack">
+        <h2>Las piezas del vídeo</h2>
+        {% for piece in plan.pieces %}
+        {% set i = loop.index0 %}
+        {% set frame = piece.scene.imitateFrame ?? null %}
+        {% set pieceCost = 0 %}
+        {% for line in job.data.estimate.lines ?? [] %}{% if line.piece is same as(i) %}{% set pieceCost = pieceCost + line.usd %}{% endif %}{% endfor %}
+        <article class="card piece" data-piece="{{ i }}" data-seconds="{{ piece.plannedSeconds }}">
+            <div class="frame" {% if frame is not null and frames[frame] is defined %}style="background-image: url('{{ path('video_file', {id: job.id, path: 'reference/' ~ frames[frame].path}) }}')"{% endif %}>
+                {% if frame is null or frames[frame] is not defined %}{{ kindNames[piece.kind] }}{% endif %}
+            </div>
+            <div class="stack">
+                <div class="row-between">
+                    <div class="piece-head">
+                        <span class="pos">{{ loop.index }}</span>
+                        <h3>{{ piece.title }}</h3>
+                        <span class="badge">{{ kindNames[piece.kind] ?? piece.kind }}</span>
+                        <span class="badge num">{{ piece.plannedSeconds|number_format(1, ',') }} s</span>
+                    </div>
+                    <span class="small muted num" title="Coste estimado de esta pieza">{{ pieceCost > 0 ? pieceCost|number_format(2, ',') ~ ' $' : 'Sin coste de clip' }}</span>
+                </div>
+                <p class="error" data-error-for="pieces.{{ i }}"></p>
+                <div class="field">
+                    <label for="voice-{{ i }}">Voz</label>
+                    <textarea class="textarea" id="voice-{{ i }}" rows="2" maxlength="300" data-path="pieces.{{ i }}.voice" data-voice data-nullable {{ editable ? '' : 'readonly' }} placeholder="Sin voz en esta pieza">{{ piece.voice }}</textarea>
+                    <div class="row-between"><p class="error" data-error-for="pieces.{{ i }}.voice"></p><p class="count num" data-count></p></div>
+                </div>
+                {% if piece.scene is defined and piece.scene %}
+                <div class="field">
+                    <label for="action-{{ i }}">Qué se ve</label>
+                    <textarea class="textarea" id="action-{{ i }}" rows="2" maxlength="800" data-path="pieces.{{ i }}.scene.action" {{ editable ? '' : 'readonly' }}>{{ piece.scene.action }}</textarea>
+                    <p class="help">Solo lo que se ve: el modelo de vídeo pintaría como letras cualquier texto entre comillas.</p>
+                    <p class="error" data-error-for="pieces.{{ i }}.scene.action"></p>
+                </div>
+                {% if piece.scene.startImage is not null or piece.kind in ['talking_person', 'image_motion'] %}
+                <div class="field">
+                    <label for="start-{{ i }}">Primer fotograma</label>
+                    <textarea class="textarea" id="start-{{ i }}" rows="2" maxlength="800" data-path="pieces.{{ i }}.scene.startImage" data-nullable {{ editable ? '' : 'readonly' }}>{{ piece.scene.startImage }}</textarea>
+                    <p class="error" data-error-for="pieces.{{ i }}.scene.startImage"></p>
+                </div>
+                {% endif %}
+                {% endif %}
+                {% if piece.card is defined and piece.card %}
+                <div class="field">
+                    <label for="card-{{ i }}">Texto de la tarjeta</label>
+                    <input class="input" id="card-{{ i }}" maxlength="60" data-path="pieces.{{ i }}.card.text" value="{{ piece.card.text }}" {{ editable ? '' : 'readonly' }}>
+                    <p class="error" data-error-for="pieces.{{ i }}.card.text"></p>
+                </div>
+                {% endif %}
+                {% if piece.logo is defined and piece.logo %}
+                <div class="field">
+                    <label for="logo-{{ i }}">Texto bajo el logo</label>
+                    <input class="input" id="logo-{{ i }}" maxlength="40" data-path="pieces.{{ i }}.logo.text" value="{{ piece.logo.text }}" {{ editable ? '' : 'readonly' }}>
+                    <p class="error" data-error-for="pieces.{{ i }}.logo.text"></p>
+                </div>
+                {% endif %}
+            </div>
+        </article>
+        {% endfor %}
+    </section>
+
+    <section class="card stack">
+        <div>
+            <h2>Textos en pantalla</h2>
+            <p class="small muted">Rótulos sobre las piezas. Sobre la persona hablando, solo abajo: arriba o en el centro le taparían la cara.</p>
+        </div>
+        {% for overlay in plan.overlays %}
+        {% set k = loop.index0 %}
+        {% if overlay.kind == 'logo' %}
+        <p class="small">{{ ui.icon('image', 'icon-16') }} Logo pequeño en la esquina, de la pieza {{ overlay.fromPiece }} a la {{ overlay.toPiece }}.</p>
+        <p class="error" data-error-for="overlays.{{ k }}"></p>
+        {% else %}
+        <div class="stack-sm">
+            <div class="overlay-row">
+                <div class="field"><label for="ov-{{ k }}">{{ {hook: 'Gancho', label: 'Rótulo', price: 'Precio', cta: 'Llamada a la acción'}[overlay.kind] ?? overlay.kind }}</label><input class="input" id="ov-{{ k }}" maxlength="40" data-path="overlays.{{ k }}.text" value="{{ overlay.text }}" {{ editable ? '' : 'readonly' }}></div>
+                <div class="field"><label for="ovp-{{ k }}">Posición</label><select class="select" id="ovp-{{ k }}" data-path="overlays.{{ k }}.position" {{ editable ? '' : 'disabled' }}>{% for p, l in {top: 'Arriba', center: 'Centro', bottom: 'Abajo'} %}<option value="{{ p }}" {{ overlay.position == p ? 'selected' }}>{{ l }}</option>{% endfor %}</select></div>
+                <div class="field"><label for="ovf-{{ k }}">Desde</label><input class="input num" type="number" min="1" max="{{ plan.pieces|length }}" id="ovf-{{ k }}" data-path="overlays.{{ k }}.fromPiece" data-int value="{{ overlay.fromPiece }}" {{ editable ? '' : 'readonly' }}></div>
+                <div class="field"><label for="ovt-{{ k }}">Hasta</label><input class="input num" type="number" min="1" max="{{ plan.pieces|length }}" id="ovt-{{ k }}" data-path="overlays.{{ k }}.toPiece" data-int value="{{ overlay.toPiece }}" {{ editable ? '' : 'readonly' }}></div>
+            </div>
+            <p class="error" data-error-for="overlays.{{ k }}"></p>
+            <p class="error" data-error-for="overlays.{{ k }}.text"></p>
+        </div>
+        {% endif %}
+        {% else %}
+        <p class="small muted">Sin rótulos: el mensaje lo llevan la voz y los subtítulos.</p>
+        {% endfor %}
+    </section>
+
+    <section class="card stack">
+        <h2>Música y subtítulos</h2>
+        {% if plan.music %}
+        <div class="grid-2">
+            <div class="field"><label for="music-style">Estilo</label><input class="input" id="music-style" maxlength="120" data-path="music.style" value="{{ plan.music.style }}" {{ editable ? '' : 'readonly' }}></div>
+            <div class="field"><label for="music-mood">Ánimo</label><input class="input" id="music-mood" maxlength="120" data-path="music.mood" value="{{ plan.music.mood }}" {{ editable ? '' : 'readonly' }}></div>
+        </div>
+        {% else %}
+        <p class="small muted">Sin música.</p>
+        {% endif %}
+        <label class="row small"><input type="checkbox" data-path="subtitles" data-bool {{ plan.subtitles ? 'checked' }} {{ editable ? '' : 'disabled' }}> Subtítulos palabra a palabra</label>
+    </section>
+</form>
+
+<aside class="stack">
+    {% if editable %}
+    <section class="card stack">
+        <div>
+            <h2>¿Cambiamos algo?</h2>
+            <p class="small muted">Pídeselo al agente en una frase. Rehace la propuesta con tu cambio y deja igual lo demás.</p>
+        </div>
+        <form class="stack-sm" data-revise-form>
+            <label class="sr-only" for="change">Cambio que quieres</label>
+            <textarea class="textarea" id="change" name="change" rows="3" maxlength="600" placeholder="Que el gancho sea una pregunta, y que la persona salga más al principio"></textarea>
+            {% if plan.questions ?? [] %}
+            <p class="xs muted">Sugerencias del agente:</p>
+            <div class="chips">{% for q in plan.questions %}<button type="button" class="chip" data-suggestion>{{ q }}</button>{% endfor %}</div>
+            {% endif %}
+            <button type="submit" class="btn btn-block" data-revise><span class="spinner"></span>{{ ui.icon('message', 'icon-16') }}Pedir cambio</button>
+        </form>
+    </section>
+    {% endif %}
+
+    <section class="card stack">
+        <h2>Coste estimado</h2>
+        <ul class="cost-lines num" data-cost-lines>
+            {% for line in job.data.estimate.lines ?? [] %}<li><span>{{ line.what }}</span><span>{{ line.usd|number_format(2, ',') }} $</span></li>{% endfor %}
+        </ul>
+        <div class="cost-total num"><span>Total</span><span data-cost-total>{{ (job.data.estimate.usd ?? 0)|number_format(2, ',') }} $</span></div>
+        <p class="xs muted">Lo que ya esté hecho de una versión anterior no se vuelve a pagar. Llevas gastado {{ job.totalCost|number_format(2, ',') }} $ en este vídeo.</p>
+        {% if editable %}
+        <button type="button" class="btn btn-block" data-save disabled><span class="spinner"></span>Guardar cambios</button>
+        <button type="button" class="btn btn-accent btn-lg btn-block" data-generate><span class="spinner"></span>{{ ui.icon('play', 'icon-16') }}Generar vídeo</button>
+        {% endif %}
+    </section>
+</aside>
+</div>
+<script type="application/json" id="plan-data">{{ plan|json_encode(constant('JSON_UNESCAPED_UNICODE') b-or constant('JSON_HEX_TAG'))|raw }}</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const stateUrl = '{{ path('video_state', {id: job.id}) }}';
+  const version = {{ job.data.plan.version ?? 'null' }};
+  const status = '{{ job.status }}';
+
+  // ---- While the worker works: its steps, then reload ----
+  const progress = document.querySelector('[data-progress]');
+  if (progress || status === 'revising') {
+    App.poll(stateUrl, (s) => {
+      if (progress) {
+        const marks = { done: '<svg class="icon" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></svg>', current: '<span class="spinner"></span>', failed: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></svg>', pending: '<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>' };
+        progress.innerHTML = s.steps.map((st) => `<li class="${st.state}"><span class="state">${marks[st.state]}</span>${App.escape(st.label)}</li>`).join('');
+        const error = document.querySelector('[data-error]');
+        error.classList.toggle('hidden', !s.error);
+        if (s.error) error.querySelector('[data-error-text]').textContent = s.error;
+        document.querySelector('[data-waiting]').textContent = s.waiting ? 'Un proveedor está ocupado: lo volvemos a intentar en unos segundos.' : '';
+      }
+      if (s.status === 'proposal' || (s.status === 'failed' && !progress) || s.planVersion !== version && s.status !== 'revising') { window.location.reload(); return false; }
+      if (s.status === 'failed') return false;
+      return true;
+    });
+  }
+
+  const form = document.querySelector('[data-plan-form]');
+  if (!form || status !== 'proposal') return;
+  const plan = JSON.parse(document.getElementById('plan-data').textContent);
+  const maxRate = {{ maxWordsPerSecond }};
+  let dirty = false;
+  const saveButton = document.querySelector('[data-save]');
+
+  // ---- Words of the voice against the seconds of its piece, as PlanChecks counts them ----
+  function count(textarea) {
+    const piece = textarea.closest('[data-piece]');
+    const seconds = parseFloat(piece.dataset.seconds);
+    const n = App.words(textarea.value);
+    const max = Math.floor(seconds * maxRate + 1e-9);
+    const out = textarea.closest('.field').querySelector('[data-count]');
+    out.textContent = n === 0 ? 'Sin voz' : `${n} palabras · caben ${max} en ${String(seconds).replace('.', ',')} s`;
+    out.classList.toggle('over', n > max);
+  }
+  form.querySelectorAll('[data-voice]').forEach((t) => { count(t); t.addEventListener('input', () => count(t)); });
+  form.addEventListener('input', () => { dirty = true; saveButton.disabled = false; });
+  form.addEventListener('change', () => { dirty = true; saveButton.disabled = false; });
+
+  function collect() {
+    const copy = structuredClone(plan);
+    form.querySelectorAll('[data-path]').forEach((el) => {
+      const keys = el.dataset.path.split('.');
+      let target = copy;
+      keys.slice(0, -1).forEach((k) => { target = target[k]; });
+      let value = el.value;
+      if ('bool' in el.dataset) value = el.checked;
+      else if ('int' in el.dataset) value = parseInt(value, 10) || 0;
+      else if ('nullable' in el.dataset && value.trim() === '') value = null;
+      target[keys[keys.length - 1]] = value;
+    });
+    return copy;
+  }
+
+  function showErrors(errors) {
+    form.querySelectorAll('[data-error-for]').forEach((s) => { s.textContent = ''; });
+    const box = form.querySelector('[data-errors]');
+    const list = box.querySelector('[data-errors-list]');
+    list.innerHTML = '';
+    Object.entries(errors).forEach(([pointer, message]) => {
+      const key = pointer.replace(/^\//, '').replaceAll('/', '.');
+      const slot = form.querySelector(`[data-error-for="${CSS.escape(key)}"]`);
+      if (slot) slot.textContent = message;
+      else list.insertAdjacentHTML('beforeend', `<li>${App.escape(message)}</li>`);
+    });
+    box.classList.toggle('hidden', list.children.length === 0);
+    const first = form.querySelector('[data-error-for]:not(:empty)') || (list.children.length ? box : null);
+    if (first) first.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  async function save() {
+    const result = await App.busy(saveButton, () => App.postJson('{{ path('video_plan_save', {id: job.id}) }}', collect()));
+    if (!result.ok) {
+      showErrors(result.errors);
+      App.toast(result.status === 422 ? 'No se ha guardado: revisa lo marcado.' : App.firstError(result.errors), 'danger');
+      return false;
+    }
+    showErrors({});
+    dirty = false;
+    saveButton.disabled = true;
+    document.querySelector('[data-cost-lines]').innerHTML = result.data.estimate.lines.map((l) => `<li><span>${App.escape(l.what)}</span><span>${App.money(l.usd)}</span></li>`).join('');
+    document.querySelector('[data-cost-total]').textContent = App.money(result.data.estimate.usd);
+    App.toast(`Guardado como versión ${result.data.version}.`, 'success');
+    return true;
+  }
+  saveButton.addEventListener('click', save);
+
+  document.querySelector('[data-generate]').addEventListener('click', async (e) => {
+    if (dirty && !(await save())) return;
+    const total = document.querySelector('[data-cost-total]').textContent;
+    if (!(await App.confirm('¿Generamos el vídeo?', `Cuesta unos ${total}. Se hacen la voz, las imágenes, los clips y la música, y se monta. Tarda unos minutos.`, 'Generar vídeo'))) return;
+    const result = await App.busy(e.currentTarget, () => App.request('{{ path('video_generate', {id: job.id}) }}', { method: 'POST' }));
+    if (!result.ok) { App.toast(App.firstError(result.errors), 'danger'); return; }
+    window.location.href = result.data.url;
+  });
+
+  const revise = document.querySelector('[data-revise-form]');
+  revise.querySelectorAll('[data-suggestion]').forEach((chip) => chip.addEventListener('click', () => { revise.change.value = chip.textContent.trim(); revise.change.focus(); }));
+  revise.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (dirty && !(await App.confirm('Tienes cambios sin guardar', 'Si pides un cambio al agente, se pierden tus ediciones. ¿Seguimos?', 'Pedir cambio'))) return;
+    const result = await App.busy(revise.querySelector('[data-revise]'), () => App.postForm('{{ path('video_revise', {id: job.id}) }}', revise));
+    if (!result.ok) { App.toast(App.firstError(result.errors), 'danger'); return; }
+    window.location.reload();
+  });
+
+  window.addEventListener('beforeunload', (e) => { if (dirty) e.preventDefault(); });
+})();
+</script>
+{% endblock %}

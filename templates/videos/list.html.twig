@@ -1,45 +1,45 @@
 {% extends 'base.html.twig' %}
 {% import '_icons.html.twig' as ui %}
 {% block title %}Mis vídeos{% endblock %}
-{% block crumbs %}<strong>Mis vídeos</strong>{% endblock %}
 {% block body %}
-<div class="page-head">
-    <div>
-        <h1>Mis vídeos</h1>
-        <p>Todos tus anuncios: los que están en marcha, las propuestas que esperan tu visto bueno y los vídeos listos para publicar.</p>
-    </div>
-    <a class="btn btn-primary" href="{{ path('video_new') }}">{{ ui.icon('plus', 'icon-16') }}Nuevo anuncio</a>
+<div class="head">
+    <h1 class="h1">Mis vídeos</h1>
+    <span class="spacer"></span>
+    <a class="btn btn-primary" href="{{ path('video_new') }}">{{ ui.icon('plus') }}Crear anuncio</a>
 </div>
 
-<nav class="tabs" aria-label="Filtrar por estado">
+{% if counts.todos == 0 %}
+<a class="hero" href="{{ path('video_new') }}">
+    <span class="hero-ic">{{ ui.icon('sparkles', 'icon-28') }}</span>
+    <span><span class="hero-title">Crea tu primer anuncio</span><span class="hero-sub">A partir de un Reel que te guste, con tu persona y tu marca</span></span>
+    <span class="hero-arrow">{{ ui.icon('arrow') }}</span>
+</a>
+{% else %}
+<nav class="tabs" aria-label="Estado">
     {% for key, label in {'todos': 'Todos', 'en-curso': 'En marcha', 'propuestas': 'Propuestas', 'listos': 'Listos', 'con-error': 'Con error'} %}
-    <a class="tab {{ tab == key ? 'on' }}" href="{{ path('video_list', key == 'todos' ? {} : {estado: key}) }}" {{ tab == key ? 'aria-current="page"' }}>{{ label }} <span class="badge num">{{ counts[key] }}</span></a>
+    {% if key == 'todos' or counts[key] > 0 %}
+    <a class="tab {{ tab == key ? 'on' }}" href="{{ path('video_list', key == 'todos' ? {} : {estado: key}) }}" {{ tab == key ? 'aria-current="page"' }}>{{ label }} <b>{{ counts[key] }}</b></a>
+    {% endif %}
     {% endfor %}
 </nav>
 
 {% if jobs is empty %}
-<div class="empty">
-    {{ ui.icon('film') }}
-    <h2>{{ tab == 'todos' ? 'Tu primer anuncio está a un paso' : 'Aquí no hay ningún vídeo' }}</h2>
-    <p>{{ tab == 'todos' ? 'Sube un Reel que te guste, la foto de quien sale y tu logo. En unos minutos tienes la propuesta.' : 'Cambia de pestaña para ver los demás, o empieza uno nuevo.' }}</p>
-    <a class="btn btn-primary" href="{{ path('video_new') }}">{{ ui.icon('plus', 'icon-16') }}Crear un anuncio</a>
-</div>
+<div class="empty"><span class="empty-ic">{{ ui.icon('film', 'icon-28') }}</span><b>Nada por aquí</b></div>
 {% else %}
-<div class="gallery">
+<div class="videos">
     {% for job in jobs %}
     {% set s = labels[job.status] ?? [job.status, 'info'] %}
-    {% set poster = job.data.result ? path('video_file', {id: job.id, path: 'out/poster.jpg'}) : null %}
-    <a class="tile" href="{{ path('video_show', {id: job.id}) }}">
-        <div class="media" {% if poster %}style="background-image: url('{{ poster }}')"{% endif %}>
-            {% if not poster %}{{ ui.icon('film') }}{% endif %}
+    {% set dot = {success: '', danger: 'bad', primary: 'idle'}[s[1]] ?? 'run' %}
+    <a class="vid" href="{{ path('video_show', {id: job.id}) }}">
+        <div class="thumb">
+            {% if job.data.result %}<img src="{{ path('video_file', {id: job.id, path: 'out/poster.jpg'}) }}" alt="" loading="lazy">{% else %}<div class="bg g{{ (loop.index % 6) + 1 }}"></div>{% endif %}
+            <span class="state"><span class="dot {{ dot }}"></span>{{ s[0] }}</span>
+            {% if job.data.result %}<span class="dur num">{{ job.data.result.durationSeconds|number_format(0) }} s</span>{% endif %}
         </div>
-        <div class="body">
-            <span class="badge badge-{{ s[1] }}"><span class="dot"></span>{{ s[0] }}</span>
-            <p class="title">{{ job.data.input.brand.name ?: (job.data.input.product|length > 60 ? job.data.input.product|slice(0, 60) ~ '…' : job.data.input.product) }}</p>
-            <p class="xs muted">{{ job.data.createdAt|date('d/m/Y H:i') }} · {{ job.data.input.durationSeconds }} s · {{ job.data.input.mode == 'voice_over' ? 'Voz en off' : 'Persona a cámara' }}</p>
-        </div>
+        <div class="meta">{{ job.data.input.brand.name ?: (job.data.input.product|length > 40 ? job.data.input.product|slice(0, 40) ~ '…' : job.data.input.product) }}<small>{{ job.data.createdAt|date('d/m/Y H:i') }} · {{ job.data.input.mode == 'voice_over' ? 'Voz en off' : 'Persona a cámara' }}</small></div>
     </a>
     {% endfor %}
 </div>
+{% endif %}
 {% endif %}
 {% endblock %}

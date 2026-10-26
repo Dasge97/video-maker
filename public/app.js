@@ -3,18 +3,15 @@
 'use strict';
 
 const App = (() => {
-  // ---- Theme: light, dark or the one of the system, remembered in this browser ----
-  const switcher = document.querySelector('[data-theme-switch]');
-  const stored = (() => { try { return localStorage.getItem('theme') || 'system'; } catch (e) { return 'system'; } })();
-  const applyTheme = (value) => {
-    if (value === 'light' || value === 'dark') document.documentElement.dataset.theme = value;
-    else delete document.documentElement.dataset.theme;
-    try { localStorage.setItem('theme', value); } catch (e) { /* private window */ }
-  };
-  if (switcher) {
-    const current = switcher.querySelector(`input[value="${stored}"]`);
-    if (current) current.checked = true;
-    switcher.addEventListener('change', (e) => applyTheme(e.target.value));
+  // ---- Theme: the one of the system until the person chooses light or dark ----
+  const toggle = document.querySelector('[data-theme-toggle]');
+  if (toggle) {
+    toggle.addEventListener('click', () => {
+      const dark = document.documentElement.dataset.theme === 'dark' || (!document.documentElement.dataset.theme && matchMedia('(prefers-color-scheme: dark)').matches);
+      const next = dark ? 'light' : 'dark';
+      document.documentElement.dataset.theme = next;
+      try { localStorage.setItem('theme', next); } catch (e) { /* private window */ }
+    });
   }
 
   // ---- Toasts ----
@@ -22,7 +19,7 @@ const App = (() => {
   const icons = { success: 'M20 6 9 17l-5-5', danger: 'M12 8v4M12 16h.01', info: 'M12 16v-4M12 8h.01' };
   function toast(message, kind = 'info') {
     const el = document.createElement('div');
-    el.className = `notice notice-${kind} toast`;
+    el.className = `notice ${kind === 'danger' ? 'bad' : ''} toast`;
     el.setAttribute('role', kind === 'danger' ? 'alert' : 'status');
     el.innerHTML = `<svg class="icon" viewBox="0 0 24 24" aria-hidden="true">${kind === 'success' ? '' : '<circle cx="12" cy="12" r="10"/>'}<path d="${icons[kind] || icons.info}"/></svg><p></p>`;
     el.querySelector('p').textContent = message;
@@ -38,7 +35,7 @@ const App = (() => {
       dialog.querySelector('[data-confirm-text]').textContent = text;
       const ok = dialog.querySelector('[data-confirm-ok]');
       ok.textContent = okLabel;
-      ok.className = danger ? 'btn btn-danger' : 'btn btn-primary';
+      ok.className = danger ? 'btn btn-danger btn-sm' : 'btn btn-primary btn-sm';
       const done = (value) => { dialog.close(); resolve(value); };
       ok.onclick = () => done(true);
       dialog.querySelector('[data-confirm-cancel]').onclick = () => done(false);

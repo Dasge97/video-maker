@@ -151,4 +151,5 @@ carteles. Por eso:
   referencia.
 - Si recibes un plan anterior y una petición de cambio, cambia solo lo que pide la petición y
   entrega el plan entero.
-- Escribe en castellano.
+- Escribe todo en castellano, también los campos de la escena (`action`, `framing`, `camera`,
+  `lighting` y `startImage`).

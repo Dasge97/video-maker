@@ -1,8 +1,15 @@
 # 6. Pantallas
 
 Tres pantallas en Twig, con un poco de JavaScript para consultar el estado y editar los textos.
-Carga la skill `diseno-web` antes de hacerlas. Arriba hay una barra de tres pasos: «Subir»,
-«Propuesta» y «Vídeo».
+
+**Estilo** (decidido por la persona el 25-10-2026): el de la sección de vídeos de new-studio
+(`frontend/video/src/styles/v5.css` y `views/v5/`), sin pantallas largas. Barra de arriba con
+pestañas, una pregunta grande por pantalla, una barra de progreso de cinco tramos y una barra fija
+abajo con «Atrás» y la acción siguiente. «Subir» es un asistente de cuatro preguntas: la
+referencia; la persona, el logo y la marca; qué se anuncia; y cómo se cuenta. La propuesta va en
+dos columnas: el móvil con la vista previa y una tarjeta compacta por pieza que se edita en el
+sitio. Referencia, rótulos y música van en paneles plegables. Los campos de cada pantalla son
+los de abajo.
 
 Una cuarta pantalla, «Mis vídeos», lista las carpetas de `var/jobs` con fecha, estado y miniatura.
 

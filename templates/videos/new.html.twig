@@ -1,317 +1,293 @@
 {% extends 'base.html.twig' %}
 {% import '_icons.html.twig' as ui %}
-{% block title %}Nuevo anuncio{% endblock %}
-{% block crumbs %}<a href="{{ path('video_list') }}">Mis vídeos</a><span class="sep">›</span><strong>Nuevo anuncio</strong>{% endblock %}
-{% block topaction %}{% endblock %}
+{% block title %}Crear anuncio{% endblock %}
 {% block body %}
-<nav class="steps" aria-label="Pasos">
-    <span class="on"><span class="n">1</span>Subir</span>
-    <span><span class="n">2</span>Propuesta</span>
-    <span><span class="n">3</span>Vídeo</span>
-</nav>
-
-<div class="page-head">
-    <div>
-        <h1>Tu próximo anuncio, a partir de uno que te guste</h1>
-        <p>Sube un Reel que funcione, la foto de quien sale y tu logo. El agente imita su ritmo y sus planos con tu mensaje, y te enseña la propuesta con su coste antes de gastar nada.</p>
+<form data-wizard novalidate>
+    <div class="wiz-head">
+        <button type="button" class="icon-btn" data-back aria-label="Paso anterior">{{ ui.icon('back') }}</button>
+        <div class="progress" role="progressbar" aria-label="Pasos" aria-valuemin="1" aria-valuemax="5" data-progress>
+            {% for n in 1..5 %}<span class="{{ n == 1 ? 'on' }}"></span>{% endfor %}
+        </div>
     </div>
-</div>
 
-<div class="proposal">
-<form class="stack-lg" data-new-form novalidate>
-    <section class="card stack">
-        <div>
-            <h2>Vídeo de referencia</h2>
-            <p class="muted small">Un anuncio vertical de hasta 90 segundos. Se copia su estructura y su ritmo, nunca sus textos ni sus personas.</p>
+    {# 1 · La referencia #}
+    <section class="wiz-step" data-step="1" aria-labelledby="ask-1">
+        <h1 id="ask-1" class="ask">¿Qué anuncio te gusta?</h1>
+        <p class="ask-sub">Imitamos su ritmo y sus planos con tu mensaje. Nunca copiamos sus textos ni sus personas.</p>
+        <div class="tgs" role="radiogroup" aria-label="Cómo das la referencia" style="margin-bottom: 16px">
+            <button type="button" class="tg" role="radio" aria-checked="true" data-ref-kind="file">{{ ui.icon('upload', 'icon-16') }}Subir vídeo</button>
+            <button type="button" class="tg" role="radio" aria-checked="false" data-ref-kind="url">{{ ui.icon('link', 'icon-16') }}Pegar enlace</button>
         </div>
-        <div class="segmented" role="radiogroup" aria-label="Cómo das la referencia">
-            <label><input type="radio" name="referenceKind" value="file" checked>Subir fichero</label>
-            <label><input type="radio" name="referenceKind" value="url">Pegar enlace</label>
-        </div>
-        <div class="field" data-reference-file>
-            <label for="reference">Fichero de vídeo</label>
-            <div class="drop" data-drop>
-                <div class="thumb">{{ ui.icon('film') }}</div>
-                <div class="grow"><p class="name" data-name>Ningún fichero elegido</p><p class="xs muted">mp4, mov o webm · hasta 200 MB</p></div>
-                <label class="btn" for="reference">{{ ui.icon('upload', 'icon-16') }}Elegir vídeo</label>
-                <input class="sr-only" type="file" id="reference" name="reference" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm">
-            </div>
-            <p class="error" data-error-for="reference"></p>
-        </div>
-        <div class="field hidden" data-reference-url>
-            <label for="referenceUrl">Enlace público</label>
-            <input class="input" type="url" id="referenceUrl" name="referenceUrl" placeholder="https://www.instagram.com/reel/…" inputmode="url">
-            <p class="help">Instagram, TikTok o YouTube. Si Instagram pide iniciar sesión, descarga el vídeo y súbelo como fichero.</p>
+        <label class="drop" data-drop>
+            <span class="plus" data-drop-icon>{{ ui.icon('film', 'icon-28') }}</span>
+            <video class="hidden" muted playsinline preload="metadata" data-drop-preview></video>
+            <span><b data-drop-name>Arrastra aquí el vídeo o haz clic para elegirlo</b><small>mp4, mov o webm · hasta 90 segundos y 200 MB</small></span>
+            <input class="sr-only" type="file" name="reference" accept="video/mp4,video/quicktime,video/webm,.mp4,.mov,.webm">
+        </label>
+        <div class="hidden" data-url-box>
+            <label class="sr-only" for="referenceUrl">Enlace del vídeo</label>
+            <input class="big-url" type="url" id="referenceUrl" name="referenceUrl" inputmode="url" placeholder="https://www.instagram.com/reel/…">
+            <p class="muted small" style="margin-top: 10px">Instagram, TikTok o YouTube. Si Instagram pide iniciar sesión, descarga el vídeo y súbelo.</p>
         </div>
     </section>
 
-    <section class="card stack">
-        <div>
-            <h2>Quién sale y de qué marca</h2>
-            <p class="muted small">Sube tus imágenes o elige una de las que has creado.</p>
+    {# 2 · La persona y la marca #}
+    <section class="wiz-step hidden" data-step="2" aria-labelledby="ask-2">
+        <h1 id="ask-2" class="ask">¿Quién sale y de qué marca?</h1>
+        <p class="ask-sub">La cara del vídeo sale de la foto: mejor de frente y bien iluminada.</p>
+        <div class="slots">
+            {% for slot in [{name: 'person', title: 'La persona', icon: 'image', optional: false}, {name: 'logo', title: 'El logo', icon: 'sparkles', optional: true}] %}
+            <button type="button" class="slot" data-slot="{{ slot.name }}">
+                <span class="slot-head"><span class="ic">{{ ui.icon(slot.icon) }}</span>{{ slot.title }}{% if slot.optional %}<span class="opt">Opcional</span>{% endif %}</span>
+                <span class="slot-empty" data-slot-empty><span class="plus">{{ ui.icon('plus') }}</span>Elegir</span>
+                <span class="slot-body hidden {{ slot.name == 'logo' ? 'contain' }}" data-slot-body><span class="slot-change">{{ ui.icon('refresh', 'icon-16') }}Cambiar</span></span>
+            </button>
+            {% endfor %}
         </div>
-        {% for field in [{name: 'person', title: 'Foto de la persona', help: 'JPEG, PNG o WebP. Sale mejor de frente y de medio cuerpo, con la cara bien visible.', kind: 'person', optional: false}, {name: 'logo', title: 'Logo (opcional)', help: 'Mejor PNG con fondo transparente. De él salen los colores de la marca.', kind: 'logo', optional: true}] %}
-        <div class="field">
-            <label for="{{ field.name }}">{{ field.title }}</label>
-            <div class="drop" data-drop data-image-field="{{ field.name }}">
-                <div class="thumb {{ field.name == 'logo' ? 'contain' }}" data-thumb>{{ ui.icon(field.name == 'logo' ? 'sparkles' : 'image') }}</div>
-                <div class="grow"><p class="name" data-name>Ninguna imagen elegida</p><p class="xs muted">{{ field.help }}</p></div>
-                <div class="row">
-                    <label class="btn" for="{{ field.name }}">{{ ui.icon('upload', 'icon-16') }}Subir</label>
-                    <button type="button" class="btn btn-ghost" data-pick="{{ field.name }}" data-kind="{{ field.kind }}">{{ ui.icon('library', 'icon-16') }}Mis imágenes</button>
+        <input class="sr-only" type="file" name="person" accept="image/jpeg,image/png,image/webp" tabindex="-1">
+        <input class="sr-only" type="file" name="logo" accept="image/jpeg,image/png,image/webp" tabindex="-1">
+        <input type="hidden" name="personLibrary"><input type="hidden" name="logoLibrary">
+        <div class="field-row">
+            <div><label class="label" for="brandName">Marca</label><input class="input" id="brandName" name="brandName" maxlength="80" placeholder="Nombre de la marca"></div>
+            <div><span class="label">Colores</span><div class="color-pair"><input type="color" name="color1" value="#6d4aff" aria-label="Color principal" data-color><input type="color" name="color2" value="#ffffff" aria-label="Color secundario" data-color><span class="muted small" style="align-self: center" data-colors-help>Salen del logo</span></div></div>
+            <div><label class="label" for="font">Tipografía</label><select class="select" id="font" name="font">{% for font in fonts %}<option {{ font == 'Poppins' ? 'selected' }}>{{ font }}</option>{% endfor %}</select></div>
+        </div>
+    </section>
+
+    {# 3 · Qué se anuncia #}
+    <section class="wiz-step hidden" data-step="3" aria-labelledby="ask-3">
+        <h1 id="ask-3" class="ask"><label for="product">¿Qué anuncias?</label></h1>
+        <p class="ask-sub">El producto o servicio, el mensaje, el precio u oferta si quieres que salga y qué debe hacer quien lo vea. No inventamos cifras.</p>
+        <textarea class="big-input" id="product" name="product" maxlength="1000" placeholder="Por ejemplo: Brisa, la botella con filtro que quita el sabor a cloro. 24,90 € con envío gratis. Pídela en brisa.es"></textarea>
+        <div class="field-row two">
+            <div><label class="label" for="note">Qué te gusta de la referencia (opcional)</label><input class="input" id="note" name="note" maxlength="1000" placeholder="El gancho del principio, los cortes rápidos…"></div>
+            <div><label class="label" for="forbiddenWords">Palabras prohibidas (opcional)</label><input class="input" id="forbiddenWords" name="forbiddenWords" placeholder="barato, oferta"></div>
+        </div>
+    </section>
+
+    {# 4 · Cómo se cuenta #}
+    <section class="wiz-step hidden" data-step="4" aria-labelledby="ask-4">
+        <h1 id="ask-4" class="ask">¿Cómo lo contamos?</h1>
+        <div class="choices" role="radiogroup" aria-label="Quién habla" style="margin-top: 18px">
+            <button type="button" class="choice" role="radio" aria-checked="true" data-mode="talking_person"><span class="check">{{ ui.icon('check', 'icon-16') }}</span><span class="ic">{{ ui.icon('mic', 'icon-28') }}</span><span><span class="name">La persona habla a cámara</span><span class="sub">Dice el mensaje con su voz, con planos de apoyo entre medias</span></span></button>
+            <button type="button" class="choice" role="radio" aria-checked="false" data-mode="voice_over"><span class="check">{{ ui.icon('check', 'icon-16') }}</span><span class="ic">{{ ui.icon('message', 'icon-28') }}</span><span><span class="name">Voz en off</span><span class="sub">Un narrador cuenta el mensaje sobre planos generados</span></span></button>
+        </div>
+        <input type="hidden" name="mode" value="talking_person">
+        <div class="field-row">
+            <div>
+                <label class="label" for="voiceId" data-voice-label>Voz de la persona</label>
+                <div style="display: flex; gap: 8px">
+                    <select class="select" id="voiceId" name="voiceId" data-voices><option value="{{ defaultVoice }}">Cargando voces…</option></select>
+                    <button type="button" class="btn btn-ghost btn-sm" data-play-voice aria-label="Escuchar la voz"><span class="spinner"></span>{{ ui.icon('play', 'icon-16') }}</button>
                 </div>
-                <input class="sr-only" type="file" id="{{ field.name }}" name="{{ field.name }}" accept="image/jpeg,image/png,image/webp">
-                <input type="hidden" name="{{ field.name }}Library" value="">
+                <audio class="hidden" data-voice-audio></audio>
             </div>
-            <p class="error" data-error-for="{{ field.name }}"></p>
+            <div><span class="label">Duración</span><div class="tgs" role="radiogroup" aria-label="Duración" data-group="durationSeconds">{% for d in durations %}<button type="button" class="tg" role="radio" aria-checked="{{ d == 15 ? 'true' : 'false' }}" data-value="{{ d }}">{{ d }} s</button>{% endfor %}</div></div>
+            <div><span class="label">Calidad de los clips</span><div class="tgs" role="radiogroup" aria-label="Calidad" data-group="model">{% for m in models|reverse %}<button type="button" class="tg" role="radio" aria-checked="{{ m.default ? 'true' : 'false' }}" data-value="{{ m.id }}" title="{{ m.model }}">{{ m.label }}</button>{% endfor %}</div></div>
         </div>
-        {% endfor %}
-        <p class="small muted">¿No tienes foto o logo? <a href="{{ path('image_index') }}">Créalos con IA</a> y vuelve aquí.</p>
-        <div class="grid-2">
-            <div class="field">
-                <label for="brandName">Nombre de la marca</label>
-                <input class="input" id="brandName" name="brandName" maxlength="80" autocomplete="organization">
-            </div>
-            <div class="field">
-                <label for="font">Tipografía de los textos</label>
-                <select class="select" id="font" name="font">
-                    {% for font in fonts %}<option value="{{ font }}" {{ font == 'Poppins' ? 'selected' }}>{{ font }}</option>{% endfor %}
-                </select>
-            </div>
-        </div>
-        <div class="field">
-            <span class="label">Colores de la marca</span>
-            <div class="row">
-                <input class="input input-color" type="color" name="color1" value="#4F46E5" aria-label="Color principal" data-color>
-                <input class="input input-color" type="color" name="color2" value="#FFFFFF" aria-label="Color secundario" data-color>
-                <p class="help" data-colors-help>Al subir el logo te proponemos sus dos colores principales.</p>
-            </div>
-        </div>
-        <div class="field">
-            <label for="forbiddenWords">Palabras prohibidas (opcional)</label>
-            <input class="input" id="forbiddenWords" name="forbiddenWords" placeholder="barato, oferta, gratis">
-            <p class="help">Separadas por comas. Tampoco saldrán en otro género o número.</p>
-        </div>
+        <input type="hidden" name="durationSeconds" value="15"><input type="hidden" name="model" value="balanced">
+        <div class="summary">{{ ui.icon('tag') }}<span data-summary></span></div>
     </section>
-
-    <section class="card stack">
-        <div>
-            <h2>Qué anuncias</h2>
-            <p class="muted small">El agente no inventa cifras: si quieres que salga un precio o una oferta, escríbelo aquí.</p>
-        </div>
-        <div class="field">
-            <label for="product">Producto, mensaje y llamada a la acción</label>
-            <textarea class="textarea" id="product" name="product" maxlength="1000" rows="5" placeholder="Producto o servicio, el mensaje principal, el precio u oferta si quieres que salga, y qué debe hacer quien lo vea" data-counted></textarea>
-            <div class="row-between"><p class="error" data-error-for="product"></p><p class="xs muted" data-counter>0 / 1.000</p></div>
-        </div>
-        <div class="field">
-            <label for="note">Qué te gusta de la referencia (opcional)</label>
-            <textarea class="textarea" id="note" name="note" maxlength="1000" rows="2" placeholder="El gancho del principio, los cortes rápidos, el plano final…"></textarea>
-        </div>
-    </section>
-
-    <section class="card stack">
-        <h2>Cómo se cuenta</h2>
-        <fieldset class="fieldset">
-            <legend>Quién habla</legend>
-            <div class="choice-grid">
-                <label class="choice"><input type="radio" name="mode" value="talking_person" checked>{{ ui.icon('mic') }}<span><strong>La persona habla a cámara</strong><span class="small muted">Sale la persona de la foto diciendo el mensaje, con planos de apoyo entre medias.</span></span></label>
-                <label class="choice"><input type="radio" name="mode" value="voice_over">{{ ui.icon('message') }}<span><strong>Voz en off</strong><span class="small muted">Un narrador cuenta el mensaje sobre planos generados. La persona puede salir sin hablar.</span></span></label>
-            </div>
-        </fieldset>
-        <div class="field">
-            <label for="voiceId" data-voice-label>Voz de la persona</label>
-            <div class="row">
-                <select class="select" id="voiceId" name="voiceId" style="flex:1; min-width: 220px" data-voices>
-                    <option value="{{ defaultVoice }}">Cargando voces…</option>
-                </select>
-                <button type="button" class="btn" data-play-voice>{{ ui.icon('play', 'icon-16') }}<span class="spinner"></span>Escuchar</button>
-            </div>
-            <p class="help" data-voices-help>Las voces en castellano salen primero.</p>
-            <audio data-voice-audio class="hidden"></audio>
-        </div>
-        <div class="grid-2">
-            <fieldset class="fieldset">
-                <legend>Duración</legend>
-                <div class="segmented">
-                    {% for d in durations %}<label><input type="radio" name="durationSeconds" value="{{ d }}" {{ d == 15 ? 'checked' }}>{{ d }} s</label>{% endfor %}
-                </div>
-            </fieldset>
-            <fieldset class="fieldset">
-                <legend>Calidad de los clips</legend>
-                <div class="segmented">
-                    {% for m in models %}<label title="{{ m.model }}"><input type="radio" name="model" value="{{ m.id }}" {{ m.default ? 'checked' }}>{{ m.label }}</label>{% endfor %}
-                </div>
-            </fieldset>
-        </div>
-    </section>
-
-    <div class="row">
-        <button type="submit" class="btn btn-primary btn-lg" data-submit><span class="spinner"></span>{{ ui.icon('sparkles', 'icon-16') }}Preparar propuesta</button>
-        <p class="small muted">Preparar la propuesta solo cuesta la llamada al agente: unos 0,30 $.</p>
-    </div>
 </form>
 
-<aside class="card stack">
-    <h2>Para que salga mejor</h2>
-    <ul class="small muted stack-sm" style="padding-left: 18px; margin: 0">
-        <li>Elige una referencia con planos claros y un gancho fuerte en los primeros segundos.</li>
-        <li>La foto de la persona, de frente y bien iluminada: la cara del vídeo sale de ella.</li>
-        <li>Escribe el precio u oferta tal como quieres que se lea.</li>
-        <li>15 segundos dan para un mensaje y una llamada a la acción.</li>
-    </ul>
-</aside>
+<div class="wiz-bar">
+    <div class="wiz-bar-in">
+        <button type="button" class="btn btn-ghost" data-back>{{ ui.icon('back') }}Atrás</button>
+        <span class="spacer"></span>
+        <span class="hint" data-hint></span>
+        <button type="button" class="btn btn-primary btn-big" data-next><span class="spinner"></span><span data-next-label>Siguiente</span>{{ ui.icon('arrow') }}</button>
+    </div>
 </div>
 
-<dialog class="dialog" data-picker style="max-width: min(640px, calc(100vw - 32px))">
-    <div class="dialog-body stack">
-        <div class="row-between"><h2>Mis imágenes</h2><a class="small" href="{{ path('image_index') }}">Crear otra</a></div>
+<dialog class="dialog" data-picker>
+    <div class="dialog-body">
+        <h2 data-picker-title>Elige una imagen</h2>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <button type="button" class="btn btn-primary btn-sm" data-picker-upload>{{ ui.icon('upload', 'icon-16') }}Subir una imagen</button>
+            <a class="btn btn-ghost btn-sm" href="{{ path('image_index') }}">{{ ui.icon('sparkles', 'icon-16') }}Crear con IA</a>
+        </div>
+        <span class="label" style="margin: 6px 0 0">O elige una de tus imágenes</span>
         <div class="picker" data-picker-grid></div>
-        <p class="muted small hidden" data-picker-empty>Todavía no has creado imágenes. <a href="{{ path('image_index') }}">Crea la primera</a>.</p>
+        <p class="muted small hidden" data-picker-empty>Aún no has creado imágenes.</p>
     </div>
-    <div class="dialog-actions"><button type="button" class="btn" data-picker-close>Cerrar</button></div>
+    <div class="dialog-actions"><button type="button" class="btn btn-ghost btn-sm" data-picker-close>Cerrar</button></div>
 </dialog>
 {% endblock %}
 
 {% block scripts %}
 <script>
 (() => {
-  const form = document.querySelector('[data-new-form]');
+  const form = document.querySelector('[data-wizard]');
+  const steps = [...form.querySelectorAll('[data-step]')];
+  const hint = document.querySelector('[data-hint]');
+  const next = document.querySelector('[data-next]');
   const params = new URLSearchParams(location.search);
+  let step = 1;
+  let refKind = 'file';
 
-  // Reference: file or link.
-  form.querySelectorAll('input[name="referenceKind"]').forEach((r) => r.addEventListener('change', () => {
-    const url = form.referenceKind.value === 'url';
-    form.querySelector('[data-reference-file]').classList.toggle('hidden', url);
-    form.querySelector('[data-reference-url]').classList.toggle('hidden', !url);
+  function show(n) {
+    step = n;
+    steps.forEach((s) => s.classList.toggle('hidden', Number(s.dataset.step) !== n));
+    form.querySelectorAll('[data-progress] span').forEach((s, i) => s.classList.toggle('on', i < n));
+    document.querySelector('[data-next-label]').textContent = n === 4 ? 'Preparar la propuesta' : 'Siguiente';
+    say('');
+    if (n === 4) summary();
+    window.scrollTo({ top: 0 });
+  }
+  function say(text, bad = true) { hint.textContent = text; hint.classList.toggle('bad', bad && !!text); }
+  document.querySelectorAll('[data-back]').forEach((b) => b.addEventListener('click', () => (step > 1 ? show(step - 1) : (location.href = '{{ path('video_list') }}'))));
+
+  // ---- 1 · reference: file (click or drop) or link ----
+  const drop = form.querySelector('[data-drop]');
+  const refInput = drop.querySelector('input[type=file]');
+  form.querySelectorAll('[data-ref-kind]').forEach((b) => b.addEventListener('click', () => {
+    refKind = b.dataset.refKind;
+    form.querySelectorAll('[data-ref-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
+    drop.classList.toggle('hidden', refKind === 'url');
+    form.querySelector('[data-url-box]').classList.toggle('hidden', refKind !== 'url');
+    if (refKind === 'url') form.referenceUrl.focus();
   }));
+  const showReference = () => {
+    const file = refInput.files[0];
+    if (!file) return;
+    drop.querySelector('[data-drop-name]').textContent = file.name;
+    const preview = drop.querySelector('[data-drop-preview]');
+    preview.src = URL.createObjectURL(file);
+    preview.classList.remove('hidden');
+    drop.querySelector('[data-drop-icon]').classList.add('hidden');
+  };
+  refInput.addEventListener('change', showReference);
+  ['dragenter', 'dragover'].forEach((e) => drop.addEventListener(e, (ev) => { ev.preventDefault(); drop.classList.add('over'); }));
+  ['dragleave', 'drop'].forEach((e) => drop.addEventListener(e, () => drop.classList.remove('over')));
+  drop.addEventListener('drop', (ev) => { ev.preventDefault(); if (ev.dataTransfer.files.length) { refInput.files = ev.dataTransfer.files; showReference(); } });
 
-  // Files: name and preview.
-  form.querySelectorAll('[data-drop]').forEach((drop) => {
-    const input = drop.querySelector('input[type="file"]');
-    input.addEventListener('change', () => {
-      const file = input.files[0];
-      drop.querySelector('[data-name]').textContent = file ? file.name : 'Ningún fichero elegido';
-      drop.classList.toggle('has-file', !!file);
-      const library = drop.querySelector('input[type="hidden"]');
-      if (library) library.value = '';
-      const thumb = drop.querySelector('[data-thumb]');
-      if (thumb && file) { thumb.style.backgroundImage = `url(${URL.createObjectURL(file)})`; thumb.innerHTML = ''; }
-      if (input.name === 'logo' && file) colorsOf({ logo: file });
-    });
-  });
-
-  // Colours of the logo.
+  // ---- 2 · person and logo: upload or library ----
+  const picker = document.querySelector('[data-picker]');
+  let pickFor = null;
+  let library = null;
+  const loadLibrary = async () => library ?? (library = ((await App.request('{{ path('image_list') }}')).data ?? []));
+  function fill(field, url, name) {
+    const slot = form.querySelector(`[data-slot="${field}"]`);
+    slot.querySelector('[data-slot-empty]').classList.add('hidden');
+    const body = slot.querySelector('[data-slot-body]');
+    body.classList.remove('hidden');
+    body.style.backgroundImage = `url("${url}")`;
+    body.title = name;
+  }
   async function colorsOf(payload) {
     const data = new FormData();
     Object.entries(payload).forEach(([k, v]) => data.append(k, v));
     const result = await App.postForm('{{ path('logo_colors') }}', data);
     const colors = result.ok ? result.data.colors : [];
-    const inputs = form.querySelectorAll('[data-color]');
-    colors.forEach((c, i) => { if (inputs[i]) inputs[i].value = c.toLowerCase(); });
-    form.querySelector('[data-colors-help]').textContent = colors.length ? 'Son los colores de tu logo. Puedes cambiarlos.' : 'No hemos sacado colores claros del logo: elígelos tú.';
+    form.querySelectorAll('[data-color]').forEach((input, i) => { if (colors[i]) input.value = colors[i].toLowerCase(); });
+    form.querySelector('[data-colors-help]').textContent = colors.length ? 'Del logo' : 'Elígelos tú';
   }
-
-  // Library picker.
-  const picker = document.querySelector('[data-picker]');
-  let pickFor = null;
-  function choose(field, image) {
-    const drop = form.querySelector(`[data-image-field="${field}"]`);
-    drop.querySelector('input[type="hidden"]').value = image.hash;
-    drop.querySelector('input[type="file"]').value = '';
-    drop.querySelector('[data-name]').textContent = image.prompt;
-    drop.classList.add('has-file');
-    const thumb = drop.querySelector('[data-thumb]');
-    thumb.style.backgroundImage = `url(${image.url})`;
-    thumb.innerHTML = '';
+  function chooseLibrary(field, image) {
+    form[`${field}Library`].value = image.hash;
+    form[field].value = '';
+    fill(field, image.url, image.prompt);
     if (field === 'logo') colorsOf({ hash: image.hash });
   }
-  let library = null;
-  async function loadLibrary() {
-    if (library) return library;
-    const result = await App.request('{{ path('image_list') }}');
-    library = result.ok ? result.data : [];
-    return library;
-  }
-  form.querySelectorAll('[data-pick]').forEach((b) => b.addEventListener('click', async () => {
-    pickFor = b.dataset.pick;
-    const images = (await loadLibrary()).filter((i) => i.kind === b.dataset.kind || i.kind === 'other');
-    const grid = picker.querySelector('[data-picker-grid]');
-    grid.innerHTML = images.map((i) => `<button type="button" data-hash="${i.hash}" title="${App.escape(i.prompt)}"><img src="${i.url}" alt="${App.escape(i.prompt)}" loading="lazy"></button>`).join('');
+  form.querySelectorAll('[data-slot]').forEach((slot) => slot.addEventListener('click', async () => {
+    pickFor = slot.dataset.slot;
+    document.querySelector('[data-picker-title]').textContent = pickFor === 'person' ? 'La foto de la persona' : 'El logo de la marca';
+    const images = (await loadLibrary()).filter((i) => i.kind === (pickFor === 'person' ? 'person' : 'logo') || i.kind === 'other');
+    picker.querySelector('[data-picker-grid]').innerHTML = images.map((i) => `<button type="button" data-hash="${i.hash}" title="${App.escape(i.prompt)}"><img src="${i.url}" alt="${App.escape(i.prompt)}" loading="lazy"></button>`).join('');
     picker.querySelector('[data-picker-empty]').classList.toggle('hidden', images.length > 0);
     picker.showModal();
   }));
   picker.querySelector('[data-picker-grid]').addEventListener('click', (e) => {
-    const button = e.target.closest('[data-hash]');
-    if (!button) return;
-    choose(pickFor, library.find((i) => i.hash === button.dataset.hash));
+    const b = e.target.closest('[data-hash]');
+    if (!b) return;
+    chooseLibrary(pickFor, library.find((i) => i.hash === b.dataset.hash));
     picker.close();
   });
+  picker.querySelector('[data-picker-upload]').addEventListener('click', () => { picker.close(); form[pickFor].click(); });
   picker.querySelector('[data-picker-close]').addEventListener('click', () => picker.close());
+  ['person', 'logo'].forEach((field) => form[field].addEventListener('change', () => {
+    const file = form[field].files[0];
+    if (!file) return;
+    form[`${field}Library`].value = '';
+    fill(field, URL.createObjectURL(file), file.name);
+    if (field === 'logo') colorsOf({ logo: file });
+  }));
   (async () => {
     for (const field of ['person', 'logo']) {
       const hash = params.get(field);
       const image = hash && (await loadLibrary()).find((i) => i.hash === hash);
-      if (image) choose(field, image);
+      if (image) chooseLibrary(field, image);
     }
   })();
 
-  // Voices.
+  // ---- 4 · mode, voice, duration and quality ----
+  form.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {
+    form.querySelectorAll('[data-mode]').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
+    form.mode.value = b.dataset.mode;
+    form.querySelector('[data-voice-label]').textContent = b.dataset.mode === 'voice_over' ? 'Voz del narrador' : 'Voz de la persona';
+    summary();
+  }));
+  form.querySelectorAll('[data-group]').forEach((group) => group.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-value]');
+    if (!b) return;
+    group.querySelectorAll('[data-value]').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
+    form[group.dataset.group].value = b.dataset.value;
+    summary();
+  }));
   const select = form.querySelector('[data-voices]');
-  const help = form.querySelector('[data-voices-help]');
   (async () => {
     const result = await App.request('{{ path('voice_list') }}');
-    if (!result.ok) {
-      select.innerHTML = '<option value="{{ defaultVoice }}">Voz por defecto</option>';
-      help.textContent = `No se han podido cargar las voces: ${App.firstError(result.errors)} Se usará la voz por defecto.`;
-      return;
-    }
+    if (!result.ok) { select.innerHTML = '<option value="{{ defaultVoice }}">Voz por defecto</option>'; return; }
+    const option = (v) => `<option value="${v.id}" ${v.id === '{{ defaultVoice }}' ? 'selected' : ''}>${App.escape(v.name.replace(/^Audicion( 2)? — /, ''))}${v.detail ? ' · ' + App.escape(v.detail) : ''}</option>`;
     const spanish = result.data.filter((v) => v.spanish);
     const others = result.data.filter((v) => !v.spanish);
-    const option = (v) => `<option value="${v.id}" ${v.id === '{{ defaultVoice }}' ? 'selected' : ''}>${App.escape(v.name)}${v.detail ? ' · ' + App.escape(v.detail) : ''}</option>`;
     select.innerHTML = (spanish.length ? `<optgroup label="En castellano">${spanish.map(option).join('')}</optgroup>` : '') + `<optgroup label="Otras voces">${others.map(option).join('')}</optgroup>`;
+    summary();
   })();
+  select.addEventListener('change', summary);
   const audio = form.querySelector('[data-voice-audio]');
-  form.querySelector('[data-play-voice]').addEventListener('click', async (e) => {
-    const button = e.currentTarget;
-    await App.busy(button, () => new Promise((resolve) => {
-      audio.src = `/voces/${select.value}/muestra`;
-      audio.oncanplay = () => { audio.play(); resolve(); };
-      audio.onerror = () => { App.toast('No se ha podido escuchar esta voz.', 'danger'); resolve(); };
-    }));
-  });
-  form.querySelectorAll('input[name="mode"]').forEach((r) => r.addEventListener('change', () => {
-    form.querySelector('[data-voice-label]').textContent = form.mode.value === 'voice_over' ? 'Voz del narrador' : 'Voz de la persona';
-  }));
-
-  // Counter of the product.
-  const product = form.querySelector('[data-counted]');
-  product.addEventListener('input', () => { form.querySelector('[data-counter]').textContent = `${product.value.length.toLocaleString('es-ES')} / 1.000`; });
-
-  // Errors on leaving a field.
-  form.addEventListener('focusout', (e) => {
-    if (e.target.name === 'product' && e.target.value.trim().length > 0 && e.target.value.trim().length < 10) showError('product', 'Cuéntalo con algo más de detalle (10 caracteres como mínimo).');
-  });
-  function showError(field, message) {
-    const slot = form.querySelector(`[data-error-for="${field}"]`);
-    if (slot) slot.textContent = message || '';
-    const input = form.querySelector(`[name="${field}"]`);
-    if (input) input.setAttribute('aria-invalid', message ? 'true' : 'false');
+  form.querySelector('[data-play-voice]').addEventListener('click', (e) => App.busy(e.currentTarget, () => new Promise((resolve) => {
+    audio.src = `/voces/${select.value}/muestra`;
+    audio.oncanplay = () => { audio.play(); resolve(); };
+    audio.onerror = () => { App.toast('No se ha podido escuchar esta voz.', 'danger'); resolve(); };
+  })));
+  function summary() {
+    const voice = select.selectedOptions[0]?.textContent.split(' · ')[0] ?? '';
+    const mode = form.mode.value === 'voice_over' ? 'voz en off' : 'la persona a cámara';
+    const quality = form.querySelector('[data-group="model"] [aria-checked="true"]')?.textContent ?? '';
+    form.querySelector('[data-summary]').innerHTML = `Un anuncio vertical de <b>${form.durationSeconds.value} s</b> con <b>${mode}</b>, voz de <b>${App.escape(voice)}</b> y calidad <b>${App.escape(quality.toLowerCase())}</b>`;
   }
 
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-    form.querySelectorAll('[data-error-for]').forEach((s) => { s.textContent = ''; });
+  // ---- Next, with the check of each step ----
+  function problem(n) {
+    if (n === 1) {
+      if (refKind === 'file' && !refInput.files.length) return 'Elige el vídeo de referencia.';
+      if (refKind === 'url' && !/^https:\/\/\S+$/.test(form.referenceUrl.value.trim())) return 'Pega un enlace que empiece por https://.';
+      if (refKind === 'file' && refInput.files[0].size > 200 * 1024 * 1024) return 'El vídeo ocupa más de 200 MB.';
+    }
+    if (n === 2 && !form.person.files.length && !form.personLibrary.value) return 'Elige la foto de la persona.';
+    if (n === 3 && form.product.value.trim().length < 10) return 'Cuéntanos qué anuncias (10 caracteres como mínimo).';
+    return '';
+  }
+  const STEP_OF = { reference: 1, referenceUrl: 1, person: 2, logo: 2, product: 3 };
+  next.addEventListener('click', async () => {
+    const issue = problem(step);
+    if (issue) { say(issue); return; }
+    if (step < 4) { show(step + 1); return; }
     const data = new FormData(form);
-    if (form.referenceKind.value === 'url') data.delete('reference'); else data.delete('referenceUrl');
-    const result = await App.busy(form.querySelector('[data-submit]'), () => App.postForm('{{ path('video_create') }}', data));
+    if (refKind === 'url') data.delete('reference'); else data.delete('referenceUrl');
+    say('Subiendo…', false);
+    const result = await App.busy(next, () => App.postForm('{{ path('video_create') }}', data));
     if (!result.ok) {
-      Object.entries(result.errors).forEach(([field, message]) => showError(field, message));
-      App.toast(result.status === 422 ? 'Revisa los campos marcados.' : App.firstError(result.errors), 'danger');
+      const [field, message] = Object.entries(result.errors)[0] ?? ['', 'Algo ha fallado.'];
+      if (STEP_OF[field]) show(STEP_OF[field]);
+      say(message);
       return;
     }
-    window.location.href = result.data.url;
+    location.href = result.data.url;
   });
+  form.addEventListener('submit', (e) => e.preventDefault());
+  form.product.addEventListener('keydown', (e) => { if (e.key === 'Enter' && e.ctrlKey) next.click(); });
+  show(1);
 })();
 </script>
 {% endblock %}

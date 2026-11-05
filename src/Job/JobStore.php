@@ -18,11 +18,11 @@ final class JobStore
     }
 
     /**
-     * A new folder with its job.json.
+     * A new folder with its job.json, of the account $owner.
      *
      * @param array<string, mixed> $input
      */
-    public function create(array $input): Job
+    public function create(array $input, string $owner): Job
     {
         $id = strtolower((string) new Ulid());
         $dir = $this->jobsDir.'/'.$id;
@@ -31,6 +31,7 @@ final class JobStore
         }
         $job = new Job($dir, [
             'id' => $id,
+            'owner' => $owner,
             'createdAt' => date(\DATE_ATOM),
             'status' => 'analysing',
             'step' => Job::STEPS['analysing'][0],
@@ -65,16 +66,16 @@ final class JobStore
     }
 
     /**
-     * Every video, the newest first.
+     * Every video, or those of one account, the newest first.
      *
      * @return list<Job>
      */
-    public function all(): array
+    public function all(?string $owner = null): array
     {
         $jobs = [];
         foreach (glob($this->jobsDir.'/*/job.json') ?: [] as $file) {
             $job = $this->get(basename(\dirname($file)));
-            if (null !== $job) {
+            if (null !== $job && (null === $owner || $owner === $job->owner())) {
                 $jobs[] = $job;
             }
         }

@@ -33,6 +33,12 @@ final class Job
         return (string) $this->data['id'];
     }
 
+    /** The id of the account that pays the video, or null in a video older than accounts. */
+    public function owner(): ?string
+    {
+        return $this->data['owner'] ?? null;
+    }
+
     public function status(): string
     {
         return (string) $this->data['status'];

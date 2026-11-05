@@ -60,6 +60,12 @@ de la persona pide fijarse en algo concreto, eso manda.
   ninguno se ve menos de 1,5 s. Un rótulo tiene como mucho 40 caracteres. Una tarjeta, una frase
   muy corta.
 
+# La voz se escribe como se dice (se comprueba)
+
+La voz la lee un sintetizador: escribe las palabras tal como se pronuncian. «4,50 euros», nunca
+«4,50 €»; «de 8 a 20 horas», nunca «20 h»; «por ciento», «minutos», «kilos». Sin símbolos (€, $, %,
+&, +, /) ni abreviaturas. Los rótulos y las tarjetas sí pueden llevar «4,50 €».
+
 # Los dos modos
 
 **talking_person.** La persona de la foto habla a cámara con su voz. Toda la voz es suya.
@@ -132,8 +138,9 @@ carteles. Por eso:
 - Pocos y muy cortos. Cada texto sale una sola vez: no repitas el texto de una tarjeta en un rótulo
   de la misma pieza, no pongas dos rótulos en la misma posición a la vez y no pongas el overlay
   `logo` sobre un `logo_card`.
-- Sobre una pieza `talking_person` no va ningún rótulo `top` ni `center`, porque tapan la cara.
-  Allí el mensaje lo llevan la voz y los subtítulos.
+- Sobre una pieza `talking_person` no va ningún rótulo, en ninguna posición: arriba o en el centro
+  le tapa la cara, y abajo tapa lo que enseña. Allí el mensaje lo llevan la voz y los subtítulos.
+- En un `generated_clip` donde sale la persona (`withPerson`), los rótulos solo van abajo.
 - La llamada a la acción va también como texto: un `cta` o el texto del `logo_card` final.
 
 # Solo lo que hay (regla estricta, se comprueba)

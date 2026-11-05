@@ -100,7 +100,7 @@
         {
             "kind": "image_motion",
             "title": "Precio",
-            "voice": "Cuesta 24,90 € y envío gratis.",
+            "voice": "Cuesta 24,90 euros y envío gratis.",
             "plannedSeconds": 2.5,
             "transition": "cut",
             "motion": "zoom_in",
@@ -132,7 +132,7 @@
             "text": "Adiós al sabor a cloro",
             "fromPiece": 2,
             "toPiece": 2,
-            "position": "top"
+            "position": "bottom"
         },
         {
             "kind": "price",

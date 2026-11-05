@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Account\Brands;
+use App\Account\CurrentAccount;
+use App\Account\Spending;
 use App\Agent\PlanAgent;
 use App\Agent\PlanChecks;
 use App\Agent\SchemaValidator;
@@ -26,11 +29,14 @@ use Symfony\Component\Routing\Attribute\Route;
 /**
  * The screens of a video (Subir, Propuesta, Vídeo), «Mis vídeos» and the JSON the screens ask
  * for. The web never calls a paid provider: it writes files and changes the status of job.json,
- * and the worker does the rest.
+ * and the worker does the rest. Each account sees and changes only its own videos, and cannot
+ * start one without its keys or past its spending limit.
  */
 final class VideoController extends AbstractController
 {
     public const DURATIONS = [10, 15, 20, 30];
+    /** About what the agent costs to prepare or change a proposal, for the spending limit. */
+    private const PROPOSAL_USD = 0.15;
     private const VIDEO_TYPES = ['mp4', 'mov', 'webm'];
     private const IMAGE_TYPES = ['jpg', 'jpeg', 'png', 'webp'];
     /** Step → what the screen says while the worker does it. */
@@ -63,13 +69,20 @@ final class VideoController extends AbstractController
         private readonly Estimate $estimate,
         private readonly VideoCatalog $videos,
         private readonly SoundCatalog $sound,
+        private readonly CurrentAccount $current,
+        private readonly Spending $spending,
+        private readonly Brands $brands,
     ) {
     }
 
     #[Route('/', name: 'home')]
     public function home(): Response
     {
-        return $this->redirectToRoute([] === $this->store->all() ? 'video_new' : 'video_list');
+        if ([] !== $this->current->missingKeys()) {
+            return $this->redirectToRoute('settings', ['seccion' => 'claves']);
+        }
+
+        return $this->redirectToRoute([] === $this->mine() ? 'video_new' : 'video_list');
     }
 
     #[Route('/videos', name: 'video_list', methods: ['GET'])]
@@ -77,14 +90,16 @@ final class VideoController extends AbstractController
     {
         $groups = ['todos' => null, 'en-curso' => ['analysing', 'revising', 'generating'], 'propuestas' => ['proposal'], 'listos' => ['ready'], 'con-error' => ['failed']];
         $tab = isset($groups[$request->query->getString('estado')]) ? $request->query->getString('estado') : 'todos';
-        $jobs = $this->store->all();
+        $jobs = $this->mine();
         $counts = [];
         foreach ($groups as $key => $statuses) {
             $counts[$key] = \count(null === $statuses ? $jobs : array_filter($jobs, static fn (Job $j) => \in_array($j->status(), $statuses, true)));
         }
         $shown = null === $groups[$tab] ? $jobs : array_values(array_filter($jobs, static fn (Job $j) => \in_array($j->status(), $groups[$tab], true)));
 
-        return $this->render('videos/list.html.twig', ['jobs' => $shown, 'tab' => $tab, 'counts' => $counts, 'labels' => self::STATUS_LABELS]);
+        $account = $this->current->require();
+
+        return $this->render('videos/list.html.twig', ['jobs' => $shown, 'tab' => $tab, 'counts' => $counts, 'labels' => self::STATUS_LABELS, 'spent' => $this->spending->month($account), 'limit' => $account->monthlyLimit(), 'busy' => array_keys(Job::STEPS)]);
     }
 
     #[Route('/videos/nuevo', name: 'video_new', methods: ['GET'])]
@@ -96,6 +111,8 @@ final class VideoController extends AbstractController
             'models' => $this->videos->all(),
             'defaultVoice' => (string) $this->sound->voice()['defaultVoiceId'],
             'library' => $this->library->all(),
+            'brands' => $this->current->require()->brands(),
+            'missing' => $this->current->missingKeys(),
         ]);
     }
 
@@ -103,6 +120,15 @@ final class VideoController extends AbstractController
     public function create(Request $request): Response
     {
         $form = $request->request;
+        $account = $this->current->require();
+        $missing = $this->current->missingKeys();
+        if ([] !== $missing) {
+            return new JsonResponse(['errors' => ['' => 'Te faltan claves para hacer vídeos ('.implode(', ', $missing).'). Añádelas en Ajustes.']], 422);
+        }
+        $refusal = $this->spending->refusal($account, self::PROPOSAL_USD);
+        if (null !== $refusal) {
+            return new JsonResponse(['errors' => ['' => $refusal]], 422);
+        }
         $errors = [];
         $url = trim($this->text($form->getString('referenceUrl')));
         /** @var UploadedFile|null $reference */
@@ -115,7 +141,7 @@ final class VideoController extends AbstractController
             $errors['reference'] = 'El enlace debe empezar por https://.';
         }
         $person = $this->image($request, 'person', $errors, 'Sube la foto de la persona o elige una de tus imágenes.', true);
-        $logo = $this->image($request, 'logo', $errors, '', false);
+        $logo = $this->image($request, 'logo', $errors, '', false) ?? $this->brands->logo($account, $form->getString('brandId'));
         $mode = $form->getString('mode');
         if (!\in_array($mode, ['talking_person', 'voice_over'], true)) {
             $errors['mode'] = 'Elige si la persona habla a cámara o hay voz en off.';
@@ -136,7 +162,10 @@ final class VideoController extends AbstractController
             return new JsonResponse(['errors' => $errors], 422);
         }
 
-        $colors = implode(', ', array_filter([$this->hex($form->getString('color1')), $this->hex($form->getString('color2'))]));
+        $colorList = array_values(array_filter([$this->hex($form->getString('color1')), $this->hex($form->getString('color2'))]));
+        $colors = implode(', ', $colorList);
+        $brandName = mb_substr(trim($this->text($form->getString('brandName'))), 0, 80);
+        $forbidden = array_values(array_filter(array_map(static fn (string $w) => mb_substr(trim($w), 0, 40), explode(',', $this->text($form->getString('forbiddenWords')))), static fn (string $w) => '' !== $w));
         $job = $this->store->create([
             'mode' => $mode,
             'durationSeconds' => $duration,
@@ -145,16 +174,16 @@ final class VideoController extends AbstractController
             'voiceId' => $voice,
             'model' => \in_array($form->getString('model'), array_column($this->videos->all(), 'id'), true) ? $form->getString('model') : null,
             'brand' => [
-                'name' => mb_substr(trim($this->text($form->getString('brandName'))), 0, 80),
+                'name' => $brandName,
                 'colors' => $colors,
                 'font' => VideoFonts::resolve($form->getString('font')) ?? VideoFonts::DEFAULT,
-                'forbiddenWords' => array_values(array_filter(array_map(static fn (string $w) => mb_substr(trim($w), 0, 40), explode(',', $this->text($form->getString('forbiddenWords')))), static fn (string $w) => '' !== $w)),
+                'forbiddenWords' => $forbidden,
             ],
             'referenceFile' => null,
             'referenceUrl' => null === $reference ? $url : null,
             'personFile' => null,
             'logoFile' => null,
-        ]);
+        ], $account->id());
         if (null !== $reference) {
             $name = 'reference-upload.'.strtolower($reference->getClientOriginalExtension());
             $reference->move($job->path('input'), $name);
@@ -164,6 +193,14 @@ final class VideoController extends AbstractController
         $job->data['input']['logoFile'] = null === $logo ? null : $this->keep($job, $logo, 'logo-upload');
         $this->store->save($job);
         $job->log('Vídeo creado desde la web');
+        if ('' !== $brandName && $form->getBoolean('saveBrand')) {
+            try {
+                $logoFile = $job->data['input']['logoFile'];
+                $this->brands->save($account, $brandName, $colorList, $form->getString('font'), $forbidden, null === $logoFile ? null : $job->path($logoFile));
+            } catch (\RangeException $e) {
+                $job->log('Marca sin guardar: '.$e->getMessage());
+            }
+        }
 
         return new JsonResponse(['url' => $this->generateUrl('video_show', ['id' => $job->id()])]);
     }
@@ -243,6 +280,7 @@ final class VideoController extends AbstractController
     #[Route('/videos/{id}/plan', name: 'video_plan_save', methods: ['POST'])]
     public function savePlan(string $id, Request $request): JsonResponse
     {
+        $this->job($id);
         $plan = json_decode($request->getContent(), true);
         if (!\is_array($plan)) {
             return new JsonResponse(['errors' => ['' => 'El plan no se ha podido leer.']], 400);
@@ -275,9 +313,14 @@ final class VideoController extends AbstractController
     #[Route('/videos/{id}/cambio', name: 'video_revise', methods: ['POST'])]
     public function revise(string $id, Request $request): JsonResponse
     {
+        $this->job($id);
         $change = trim($request->request->getString('change'));
         if (mb_strlen($change) < 3 || mb_strlen($change) > 600) {
             return new JsonResponse(['errors' => ['change' => 'Escribe el cambio en entre 3 y 600 caracteres.']], 422);
+        }
+        $refusal = $this->spending->refusal($this->current->require(), self::PROPOSAL_USD);
+        if (null !== $refusal) {
+            return new JsonResponse(['errors' => ['' => $refusal]], 422);
         }
 
         return $this->move($id, ['proposal'], static function (Job $job) use ($change): void {
@@ -289,6 +332,16 @@ final class VideoController extends AbstractController
     #[Route('/videos/{id}/generar', name: 'video_generate', methods: ['POST'])]
     public function generate(string $id): JsonResponse
     {
+        $job = $this->job($id);
+        $missing = $this->current->missingKeys();
+        if ([] !== $missing) {
+            return new JsonResponse(['errors' => ['' => 'Te faltan claves para generar el vídeo ('.implode(', ', $missing).'). Añádelas en Ajustes.']], 422);
+        }
+        $refusal = $this->spending->refusal($this->current->require(), (float) ($job->data['estimate']['usd'] ?? 0));
+        if (null !== $refusal) {
+            return new JsonResponse(['errors' => ['' => $refusal]], 422);
+        }
+
         return $this->move($id, ['proposal'], static function (Job $job): void {
             $job->data['result'] = null;
             $job->data['warnings'] = [];
@@ -299,6 +352,8 @@ final class VideoController extends AbstractController
     #[Route('/videos/{id}/editar', name: 'video_edit', methods: ['POST'])]
     public function edit(string $id): JsonResponse
     {
+        $this->job($id);
+
         return $this->move($id, ['ready', 'failed'], static function (Job $job): void {
             $job->data['status'] = 'proposal';
             $job->data['step'] = null;
@@ -310,12 +365,15 @@ final class VideoController extends AbstractController
     #[Route('/videos/{id}/reintentar', name: 'video_retry', methods: ['POST'])]
     public function retry(string $id): JsonResponse
     {
+        $this->job($id);
+
         return $this->move($id, ['failed'], static fn (Job $job) => $job->retry());
     }
 
     #[Route('/videos/{id}/borrar', name: 'video_delete', methods: ['POST'])]
     public function delete(string $id): JsonResponse
     {
+        $this->job($id);
         if (!$this->store->delete($id)) {
             return new JsonResponse(['errors' => ['' => 'No se puede borrar un vídeo mientras se está preparando o generando.']], 409);
         }
@@ -366,9 +424,23 @@ final class VideoController extends AbstractController
         return new JsonResponse(['url' => $this->generateUrl($then, ['id' => $id])]);
     }
 
+    /** A video of the account; the ones of other accounts do not exist for it. */
     private function job(string $id): Job
     {
-        return $this->store->get($id) ?? throw $this->createNotFoundException('Ese vídeo no existe.');
+        $job = $this->store->get($id);
+        if (null === $job || $job->owner() !== $this->current->require()->id()) {
+            throw $this->createNotFoundException('Ese vídeo no existe.');
+        }
+
+        return $job;
+    }
+
+    /**
+     * @return list<Job>
+     */
+    private function mine(): array
+    {
+        return $this->store->all($this->current->require()->id());
     }
 
     /**

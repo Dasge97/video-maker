@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Account\AccountStore;
+use App\Account\CurrentAccount;
 use App\Prompt\PromptBuilder;
 use App\Providers\ElevenLabsMusicGateway;
 use App\Providers\ElevenLabsVoiceGateway;
@@ -50,6 +52,8 @@ final class ProbeCommand extends Command
         private readonly VideoCatalog $videos,
         private readonly PromptBuilder $prompts,
         private readonly Ffmpeg $ffmpeg,
+        private readonly AccountStore $accounts,
+        private readonly CurrentAccount $current,
         #[Autowire('%kernel.project_dir%/var/probe')]
         private readonly string $dir,
     ) {
@@ -60,6 +64,7 @@ final class ProbeCommand extends Command
     {
         $this
             ->addArgument('provider', InputArgument::REQUIRED, 'voice, image, avatar, clip o music')
+            ->addArgument('cuenta', InputArgument::REQUIRED, 'Correo de la cuenta cuyas claves pagan la prueba')
             ->addOption('person', null, InputOption::VALUE_REQUIRED, 'Foto de la persona (para image y clip)')
             ->addOption('voice', null, InputOption::VALUE_REQUIRED, 'Voz de ElevenLabs', 'f9DFWr0Y8aHd6VNMEdTt');
     }
@@ -67,14 +72,20 @@ final class ProbeCommand extends Command
     protected function execute(InputInterface $input, OutputInterface $output): int
     {
         is_dir($this->dir) || mkdir($this->dir, 0775, true);
-        $result = match ((string) $input->getArgument('provider')) {
+        $account = $this->accounts->byEmail((string) $input->getArgument('cuenta'));
+        if (null === $account) {
+            $output->writeln('<error>No hay ninguna cuenta con ese correo.</error>');
+
+            return Command::FAILURE;
+        }
+        $result = $this->current->runAs($account, fn () => match ((string) $input->getArgument('provider')) {
             'voice' => $this->voice((string) $input->getOption('voice')),
             'image' => $this->image((string) $input->getOption('person')),
             'avatar' => $this->avatarClip(),
             'clip' => $this->clip((string) $input->getOption('person')),
             'music' => $this->musicClip(),
             default => ['error' => 'Proveedor desconocido.'],
-        };
+        });
         file_put_contents($this->dir.'/'.$input->getArgument('provider').'.json', json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
         $output->writeln(json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
 

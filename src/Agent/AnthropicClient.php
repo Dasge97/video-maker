@@ -11,6 +11,7 @@ use Anthropic\Core\Exceptions\APIStatusException;
 use Anthropic\Core\Exceptions\AuthenticationException;
 use Anthropic\Core\Exceptions\PermissionDeniedException;
 use App\Job\StepFailed;
+use App\Account\CurrentAccount;
 use App\Providers\MissingKey;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\HttpClient\Psr18Client;
@@ -33,12 +34,11 @@ final class AnthropicClient
     ];
 
     private ?Client $client = null;
+    private ?string $clientKey = null;
 
     public function __construct(
         private readonly HttpClientInterface $http,
-        #[Autowire('%env(ANTHROPIC_API_KEY)%')]
-        #[\SensitiveParameter]
-        private readonly string $apiKey,
+        private readonly CurrentAccount $account,
         #[Autowire('%env(ANTHROPIC_MODEL)%')]
         private readonly string $model,
     ) {
@@ -56,7 +56,7 @@ final class AnthropicClient
      */
     public function message(array $system, array $messages, array $tools): BetaMessage
     {
-        MissingKey::check($this->apiKey, 'ANTHROPIC_API_KEY', 'Anthropic');
+        MissingKey::check($this->account->key('anthropic'), 'Anthropic');
         try {
             return $this->client()->beta->messages->create(
                 maxTokens: self::MAX_TOKENS,
@@ -73,9 +73,9 @@ final class AnthropicClient
                 betas: ['server-side-fallback-2026-07-01'],
             );
         } catch (AuthenticationException|PermissionDeniedException) {
-            throw new StepFailed('La clave de Anthropic de .env.local no es válida o no tiene permiso.');
+            throw new StepFailed('Tu clave de Anthropic no es válida o no tiene permiso: cámbiala en Ajustes.');
         } catch (APIStatusException $e) {
-            throw new StepFailed(\sprintf('Anthropic ha rechazado la petición (%d): %s', $e->status ?? 0, mb_substr(str_replace($this->apiKey, '[clave]', $e->getMessage()), 0, 300)));
+            throw new StepFailed(\sprintf('Anthropic ha rechazado la petición (%d): %s', $e->status ?? 0, mb_substr(str_replace($this->account->key('anthropic'), '[clave]', $e->getMessage()), 0, 300)));
         } catch (APIConnectionException) {
             throw new StepFailed('No se ha podido conectar con Anthropic. Reintenta en un rato.');
         }
@@ -95,9 +95,16 @@ final class AnthropicClient
 
     private function client(): Client
     {
-        // The agent thinks before it answers: one call can take minutes.
+        // The agent thinks before it answers: one call can take minutes. A client per key: the
+        // worker makes the videos of several accounts.
+        $key = $this->account->key('anthropic');
+        if (null === $this->client || $this->clientKey !== hash('sha256', $key)) {
+            $this->clientKey = hash('sha256', $key);
+            $this->client = null;
+        }
+
         return $this->client ??= new Client(
-            apiKey: $this->apiKey,
+            apiKey: $key,
             requestOptions: ['transporter' => new Psr18Client($this->http->withOptions(['timeout' => 600, 'max_duration' => 900]))],
         );
     }

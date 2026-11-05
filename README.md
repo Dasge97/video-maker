@@ -47,7 +47,9 @@ Two modes:
   voice and a mouth generated from the audio (Kling AI Avatar).
 - **Voice-over.** A narrator tells the message over generated shots (Kling O3).
 
-Besides, **Crear imagen** (create image) generates with AI the photo or the logo you are missing.
+Besides, **Crear imagen** (create image) generates with AI the photo or the logo you are missing,
+and **Ajustes** (settings) keeps your keys, your spending limit and your brands (logo, colours
+and font) so you do not repeat them.
 
 | | |
 |---|---|
@@ -83,16 +85,31 @@ composer install
 
 ## Configuration
 
-Keys go in `.env.local`, which is not versioned:
+Each person logs in with their account and enters **their own keys** in **Ajustes** (settings):
+everyone pays for their own videos, directly to each provider. Without the four keys no video
+can be made.
 
-```dotenv
-ANTHROPIC_API_KEY=...        # the agent
-OPENAI_API_KEY=...           # start images, backgrounds and «Crear imagen»
-ELEVENLABS_API_KEY=...       # voice and music
-FAL_KEY=...                  # clips and talking person
-AIHUB_URL=https://...        # transcription of the reference
-AIHUB_API_KEY=...
+| Key | What for |
+|---|---|
+| Anthropic | The agent that writes the proposal |
+| ElevenLabs | The voice, the music and the transcription of the reference |
+| fal.ai | The video clips and the talking person |
+| OpenAI | The start images and «Crear imagen» |
+| AI Hub (optional) | Transcribing the reference with your own AI Hub instead of ElevenLabs |
+
+The keys are stored encrypted with a server secret kept in `.env.local`, which is not versioned.
+Create it once:
+
+```bash
+php -r "echo 'APP_SECRET='.bin2hex(random_bytes(16)).PHP_EOL.'APP_KEYS_SECRET='.base64_encode(random_bytes(32)).PHP_EOL;" >> .env.local
 ```
+
+> [!IMPORTANT]
+> Keep `APP_KEYS_SECRET` somewhere safe. If it is lost, the saved keys cannot be read and every
+> person has to enter them again.
+
+**Ajustes** also shows the spending of the month, an optional monthly limit (once reached,
+nothing new starts), the saved brands and the password change.
 
 Other variables, with their default in `.env`:
 
@@ -101,6 +118,7 @@ Other variables, with their default in `.env`:
 | `ANTHROPIC_MODEL` | `claude-opus-5-5` | The model of the agent |
 | `OPENAI_IMAGE_MODEL` | `gpt-image-2.5-sunburst` | The image model |
 | `VIDEO_MODEL` | `balanced` | `balanced` (Kling O3 Standard) or `high` (Kling O3 Pro) |
+| `REGISTRO_ABIERTO` | `0` | With `1`, anybody can create an account at `/registro`. With `0`, only from the console |
 | `MAX_PAID_CLIPS` | `5` | Limit of pieces that make a paid clip in one ad |
 
 Video models and their prices are in `config/models.yaml`; voice, music and the talking person in
@@ -119,7 +137,14 @@ symfony serve --no-tls --port=8010
 php bin/console app:worker
 ```
 
-Open http://127.0.0.1:8010 and click **Nuevo anuncio** (new ad).
+Create your account (the password is asked without showing it):
+
+```bash
+php bin/console app:cuenta:crear you@example.com --nombre="Your name"
+```
+
+Open http://127.0.0.1:8010, log in, enter your keys in **Ajustes** and click **Crear anuncio**
+(create ad).
 
 Useful commands:
 
@@ -127,7 +152,8 @@ Useful commands:
 |---|---|
 | `php bin/console app:worker` | The background worker: does the pending steps of every video |
 | `php bin/console app:demo-montage` | Edits a 12 s test video without providers, to check the editing |
-| `php bin/console app:probe <voice\|image\|avatar\|clip\|music>` | One paid test call to a provider |
+| `php bin/console app:cuenta:crear <email>` | Creates an account. `--adoptar` gives it the videos and images made before accounts |
+| `php bin/console app:probe <voice\|image\|avatar\|clip\|music> <email>` | One paid test call to a provider, with the keys of that account |
 | `php bin/phpunit` | The tests, with the providers imitated |
 
 ## How it works

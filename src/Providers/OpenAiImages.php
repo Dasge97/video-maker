@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Account\CurrentAccount;
 use App\Job\StepFailed;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\Mime\Part\DataPart;
@@ -28,9 +29,7 @@ final class OpenAiImages
 
     public function __construct(
         private readonly HttpClientInterface $http,
-        #[Autowire('%env(OPENAI_API_KEY)%')]
-        #[\SensitiveParameter]
-        private readonly string $apiKey,
+        private readonly CurrentAccount $account,
         #[Autowire('%env(OPENAI_IMAGE_MODEL)%')]
         private readonly string $model,
     ) {
@@ -63,7 +62,8 @@ final class OpenAiImages
      */
     private function call(string $prompt, string $size, array $images, bool $transparent): array
     {
-        MissingKey::check($this->apiKey, 'OPENAI_API_KEY', 'OpenAI');
+        $key = $this->account->key('openai');
+        MissingKey::check($key, 'OpenAI');
         // PNG keeps the transparency of a logo; JPEG weighs much less for the rest.
         $fields = [
             'model' => $this->model,
@@ -73,7 +73,7 @@ final class OpenAiImages
             'output_format' => $transparent ? 'png' : 'jpeg',
             'n' => 1,
         ] + ($transparent ? ['background' => 'transparent'] : ['output_compression' => 90]);
-        $options = ['auth_bearer' => $this->apiKey, 'timeout' => self::WAIT, 'max_duration' => self::WAIT];
+        $options = ['auth_bearer' => $key, 'timeout' => self::WAIT, 'max_duration' => self::WAIT];
         if ([] !== $images) {
             // Editing is another route, in multipart: the images travel as files.
             $parts = array_map('strval', $fields);

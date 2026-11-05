@@ -1,0 +1,159 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block title %}Ajustes{% endblock %}
+{% block body %}
+<div class="head">
+    <h1 class="h1">Ajustes</h1>
+</div>
+<nav class="tabs" aria-label="Partes de los ajustes">
+    {% for key, label in sections %}
+    <a class="tab {{ section == key ? 'on' }}" href="{{ path('settings', {seccion: key}) }}" {{ section == key ? 'aria-current="page"' }}>{{ label }}{% if key == 'claves' and missing is not empty %} <b class="warn-count">{{ missing|length }}</b>{% endif %}</a>
+    {% endfor %}
+</nav>
+
+{% if section == 'claves' %}
+<div class="settings">
+    <p class="muted settings-intro">Cada vídeo lo pagas tú, directamente a cada servicio, con tus claves. Se guardan cifradas y nunca se vuelven a mostrar enteras.</p>
+    {% if missing is not empty %}
+    <div class="notice warn">{{ ui.icon('key') }}<p>Para hacer vídeos te {{ missing|length == 1 ? 'falta la clave' : 'faltan las claves' }} de {{ missing|join(', ', ' y ') }}.</p></div>
+    {% endif %}
+    <form class="key-list" data-keys-form novalidate>
+        {% for provider, k in keys %}
+        <div class="key-card">
+            <div class="key-head">
+                <span class="key-ic">{{ ui.icon('key', 'icon-16') }}</span>
+                <span class="key-name">{{ k.label }}{% if not k.required %}<span class="opt">Opcional</span>{% endif %}</span>
+                <span class="spacer"></span>
+                {% if k.saved %}<span class="badge ok">{{ ui.icon('check', 'icon-16') }}Guardada <span class="num">{{ k.hint }}</span></span>{% elseif k.required %}<span class="badge warn">Falta</span>{% endif %}
+            </div>
+            <p class="muted small">{{ k.for }}{% if k.url is defined %} · <a href="{{ k.url }}" target="_blank" rel="noopener">Dónde se consigue</a>{% endif %}</p>
+            {% if provider == 'aihub' %}
+            <label class="label" for="aihubUrl">Dirección de tu AI Hub</label>
+            <input class="input" id="aihubUrl" name="aihubUrl" value="{{ aihubUrl }}" inputmode="url" placeholder="https://aihub.tudominio.com" autocomplete="off">
+            <p class="error" data-error-for="aihubUrl"></p>
+            {% endif %}
+            <label class="label" for="key-{{ provider }}">{{ k.saved ? 'Cambiar la clave' : 'Clave' }}</label>
+            <div class="key-input">
+                <input class="input" type="password" id="key-{{ provider }}" name="{{ provider }}" autocomplete="off" spellcheck="false" placeholder="{{ k.saved ? 'Déjalo vacío para conservar la guardada' : 'Pega aquí tu clave' }}">
+                {% if k.saved %}<button type="button" class="btn btn-ghost btn-sm" data-post="{{ path('settings_key_delete', {provider: provider}) }}" data-confirm-title="¿Quitar la clave de {{ k.label }}?" data-confirm-text="Sin ella no podrás {{ k.required ? 'hacer vídeos' : 'usar tu AI Hub' }} hasta que pongas otra." data-confirm-ok="Quitar" data-danger data-reload aria-label="Quitar la clave de {{ k.label }}"><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}</button>{% endif %}
+            </div>
+            <p class="error" data-error-for="{{ provider }}"></p>
+        </div>
+        {% endfor %}
+        <div class="settings-actions">
+            <span class="muted small">Al guardar, cada clave nueva se prueba con una consulta gratuita.</span>
+            <span class="spacer"></span>
+            <button type="submit" class="btn btn-primary" data-submit><span class="spinner"></span>{{ ui.icon('check') }}Guardar claves</button>
+        </div>
+    </form>
+</div>
+
+{% elseif section == 'gasto' %}
+<div class="settings">
+    <div class="spend">
+        <div>
+            <span class="label">Este mes llevas</span>
+            <div class="spend-num num">{{ spent|number_format(2, ',', '.') }} $</div>
+            <p class="muted small">{% if limit is not null %}de un límite de {{ limit|number_format(2, ',', '.') }} ${% else %}Sin límite de gasto{% endif %}</p>
+        </div>
+        {% if limit is not null %}
+        {% set pct = limit > 0 ? min(100, spent / limit * 100) : 100 %}
+        <div class="meter {{ pct >= 100 ? 'full' : (pct >= 80 ? 'near' : '') }}" role="meter" aria-valuemin="0" aria-valuemax="{{ limit }}" aria-valuenow="{{ spent }}" aria-label="Gasto del mes"><span style="width: {{ pct }}%"></span></div>
+        {% endif %}
+    </div>
+    <form class="key-card" data-limit-form novalidate>
+        <label class="label" for="limit">Límite de gasto al mes, en dólares</label>
+        <div class="key-input">
+            <input class="input num" id="limit" name="limit" inputmode="decimal" value="{{ limit is not null ? limit|number_format(2, ',', '') }}" placeholder="Sin límite" style="max-width: 200px">
+            <button type="submit" class="btn btn-primary" data-submit><span class="spinner"></span>Guardar límite</button>
+        </div>
+        <p class="error" data-error-for="limit"></p>
+        <p class="muted small">Al llegar al límite no se empieza nada nuevo: ni propuestas, ni vídeos, ni imágenes. Un clip ya enviado siempre se recoge. Déjalo vacío para no tener límite.</p>
+    </form>
+    <span class="section-label">Lo gastado este mes</span>
+    {% if videos is empty %}
+    <p class="muted">Este mes aún no has gastado nada en vídeos.</p>
+    {% else %}
+    <div class="cost-table">
+        {% for v in videos %}
+        <a class="cost-row" href="{{ path('video_show', {id: v.id}) }}"><span>{{ v.name }}</span><span class="num">{{ v.usd|number_format(2, ',', '.') }} $</span></a>
+        {% endfor %}
+    </div>
+    <p class="muted small" style="margin-top: 10px">Las imágenes de «Crear imagen» también cuentan en el total del mes.</p>
+    {% endif %}
+</div>
+
+{% elseif section == 'marcas' %}
+<div class="settings wide">
+    <p class="muted settings-intro">Tus marcas guardadas: logo, colores, tipografía y palabras prohibidas. Elígelas al crear un anuncio y no tendrás que repetirlas.</p>
+    {% if account.brands is empty %}
+    <a class="empty" href="{{ path('video_new') }}"><span class="empty-ic">{{ ui.icon('tag', 'icon-28') }}</span><b>Aún no has guardado ninguna marca</b><span>Al crear un anuncio, marca «Guardar la marca para otros vídeos».</span></a>
+    {% else %}
+    <div class="brand-grid">
+        {% for b in account.brands %}
+        <div class="brand-card">
+            <div class="brand-logo">{% if b.logo %}<img src="{{ path('brand_logo', {id: b.id}) }}" alt="Logo de {{ b.name }}">{% else %}<span>{{ b.name|first|upper }}</span>{% endif %}</div>
+            <div class="brand-info">
+                <b>{{ b.name }}</b>
+                <span class="brand-colors">{% for c in b.colors %}<span class="swatch" style="background: {{ c }}" title="{{ c }}"></span>{% endfor %}<span class="muted small">{{ b.font }}</span></span>
+                {% if b.forbiddenWords is not empty %}<span class="muted small">Sin: {{ b.forbiddenWords|join(', ') }}</span>{% endif %}
+            </div>
+            <div class="brand-actions">
+                <a class="btn btn-ghost btn-sm" href="{{ path('video_new', {marca: b.id}) }}">{{ ui.icon('sparkles', 'icon-16') }}Usar</a>
+                <button type="button" class="btn btn-ghost btn-sm" data-post="{{ path('settings_brand_delete', {id: b.id}) }}" data-confirm-title="¿Borrar la marca {{ b.name }}?" data-confirm-text="Los vídeos que ya la usan no cambian." data-confirm-ok="Borrar" data-danger data-reload aria-label="Borrar la marca {{ b.name }}"><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}</button>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+
+{% else %}
+<div class="settings">
+    <div class="key-card">
+        <span class="label">Tu cuenta</span>
+        <b>{{ account.name }}</b>
+        <span class="muted">{{ account.email }}</span>
+    </div>
+    <form class="key-card" data-password-form novalidate>
+        <span class="section-label" style="margin-top: 0">Cambiar la contraseña</span>
+        <label class="label" for="current">Contraseña actual</label>
+        <input class="input" type="password" id="current" name="current" autocomplete="current-password">
+        <p class="error" data-error-for="current"></p>
+        <label class="label" for="new" style="margin-top: 12px">Contraseña nueva</label>
+        <input class="input" type="password" id="new" name="new" autocomplete="new-password">
+        <p class="error" data-error-for="new"></p>
+        <div class="settings-actions"><span class="spacer"></span><button type="submit" class="btn btn-primary" data-submit><span class="spinner"></span>Cambiar contraseña</button></div>
+    </form>
+    <a class="btn btn-ghost" href="{{ path('logout') }}" style="align-self: flex-start">{{ ui.icon('logout') }}Salir</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  // Each form posts itself, shows the errors under its fields and, when it works, says so.
+  const forms = { '[data-keys-form]': ['{{ path('settings_keys') }}', 'Claves guardadas'], '[data-limit-form]': ['{{ path('settings_limit') }}', 'Límite guardado'], '[data-password-form]': ['{{ path('settings_password') }}', 'Contraseña cambiada'] };
+  Object.entries(forms).forEach(([selector, [url, done]]) => {
+    const form = document.querySelector(selector);
+    if (!form) return;
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      form.querySelectorAll('[data-error-for]').forEach((el) => (el.textContent = ''));
+      const result = await App.busy(form.querySelector('[data-submit]'), () => App.postForm(url, form));
+      if (!result.ok) {
+        Object.entries(result.errors).forEach(([field, message]) => {
+          const el = form.querySelector(`[data-error-for="${field}"]`);
+          if (el) el.textContent = message; else App.toast(message, 'danger');
+        });
+        return;
+      }
+      (result.data.notes || []).forEach((n) => App.toast(n));
+      App.toast(done, 'success');
+      if (selector !== '[data-password-form]') setTimeout(() => location.reload(), 700); else form.reset();
+    });
+  });
+})();
+</script>
+{% endblock %}

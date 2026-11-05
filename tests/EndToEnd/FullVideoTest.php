@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Tests\EndToEnd;
 
+use App\Account\Account;
+use App\Account\AccountStore;
+use App\Account\KeyCipher;
 use App\Command\WorkerCommand;
 use App\Job\Job;
 use App\Job\JobStore;
@@ -61,8 +64,9 @@ final class FullVideoTest extends KernelTestCase
         /** @var WorkerCommand $worker */
         $worker = $container->get(WorkerCommand::class);
 
+        $account = $this->account();
         $fixture = json_decode((string) file_get_contents(\dirname(__DIR__).'/fixtures/talking_person/job.json'), true);
-        $job = $store->create(['referenceUrl' => null, 'referenceFile' => 'input/reference-upload.mp4', 'personFile' => 'input/person-upload.jpg', 'logoFile' => 'input/logo-upload.png'] + $fixture['input']);
+        $job = $store->create(['referenceUrl' => null, 'referenceFile' => 'input/reference-upload.mp4', 'personFile' => 'input/person-upload.jpg', 'logoFile' => 'input/logo-upload.png'] + $fixture['input'], $account->id());
         copy($this->media.'/reference.mp4', $job->path('input/reference-upload.mp4'));
         copy(\dirname(__DIR__).'/fixtures/talking_person/input/person.jpg', $job->path('input/person-upload.jpg'));
         copy(\dirname(__DIR__).'/fixtures/talking_person/input/logo.png', $job->path('input/logo-upload.png'));
@@ -100,6 +104,47 @@ final class FullVideoTest extends KernelTestCase
         self::assertSame([], array_values(array_filter(\array_slice($this->calls, $before), static fn (string $c) => str_starts_with($c, 'POST'))));
 
         $store->delete($job->id());
+    }
+
+    public function testAVideoStopsAtTheSpendingLimitOfItsAccount(): void
+    {
+        self::bootKernel();
+        $container = static::getContainer();
+        $container->set('http_client', new MockHttpClient($this->provider(...)));
+        /** @var JobStore $store */
+        $store = $container->get(JobStore::class);
+        /** @var WorkerCommand $worker */
+        $worker = $container->get(WorkerCommand::class);
+        $account = $this->account(0.0);
+        $fixture = json_decode((string) file_get_contents(\dirname(__DIR__).'/fixtures/talking_person/job.json'), true);
+        $job = $store->create(['referenceUrl' => null, 'referenceFile' => 'input/reference-upload.mp4', 'personFile' => 'input/person-upload.jpg', 'logoFile' => null] + $fixture['input'], $account->id());
+        copy($this->media.'/reference.mp4', $job->path('input/reference-upload.mp4'));
+        copy(\dirname(__DIR__).'/fixtures/talking_person/input/person.jpg', $job->path('input/person-upload.jpg'));
+        $store->save($job);
+
+        $job = $this->work($store, $worker, $job->id());
+        self::assertSame('failed', $job->status());
+        self::assertStringContainsString('límite de gasto', (string) $job->data['error']['message']);
+        self::assertSame([], $this->calls, 'Nothing is asked to a provider past the limit.');
+        $store->delete($job->id());
+    }
+
+    /** An account with fake keys, as if entered in «Ajustes». */
+    private function account(?float $limit = null): Account
+    {
+        $container = static::getContainer();
+        /** @var AccountStore $accounts */
+        $accounts = $container->get(AccountStore::class);
+        /** @var KeyCipher $cipher */
+        $cipher = $container->get(KeyCipher::class);
+        $account = $accounts->create('prueba-'.bin2hex(random_bytes(4)).'@example.com', 'Prueba');
+        foreach (['anthropic', 'elevenlabs', 'fal', 'openai'] as $provider) {
+            $account->data['keys'][$provider] = $cipher->encrypt('test');
+        }
+        $account->data['monthlyLimitUsd'] = $limit;
+        $accounts->save($account);
+
+        return $account;
     }
 
     private function work(JobStore $store, WorkerCommand $worker, string $id): Job

@@ -19,6 +19,9 @@ use App\Sound\SoundCatalog;
  */
 final class MusicStep implements Step
 {
+    /** Times ElevenLabs may be busy before the video goes without music (one every 30 s). */
+    private const BUSY_RETRIES = 4;
+
     public function __construct(
         private readonly ElevenLabsMusicGateway $music,
         private readonly SoundCatalog $sound,
@@ -44,7 +47,17 @@ final class MusicStep implements Step
         if (!is_file($job->path($file))) {
             try {
                 $made = $this->music->compose($prompt, $seconds);
-            } catch (StepFailed|VideoRejected|ProviderUnavailable $e) {
+            } catch (ProviderUnavailable $e) {
+                // ElevenLabs busy («system_busy»): the worker tries again in 30 s, a few times,
+                // before the video goes without music.
+                if (($job->data['retries']['music'] ?? 0) < self::BUSY_RETRIES) {
+                    throw $e;
+                }
+                $job->warn('La música no se pudo generar: el vídeo va sin música. ('.$e->getMessage().')');
+                $job->log('Música fallida: '.$e->getMessage());
+
+                return true;
+            } catch (StepFailed|VideoRejected $e) {
                 $job->warn('La música no se pudo generar: el vídeo va sin música. ('.$e->getMessage().')');
                 $job->log('Música fallida: '.$e->getMessage());
 

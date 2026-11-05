@@ -4,13 +4,13 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use App\Account\CurrentAccount;
 use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\HttpClient\ResponseInterface;
 
 /**
  * Calls to the API of ElevenLabs (https://elevenlabs.io/docs/api-reference) with the key of
- * .env.local in the header xi-api-key. A refused request (4xx) is a rejection with the message
+ * the account in the header xi-api-key. A refused request (4xx) is a rejection with the message
  * of ElevenLabs; a busy or unreachable service is «unavailable» and nothing is charged.
  */
 final class ElevenLabsClient
@@ -19,15 +19,13 @@ final class ElevenLabsClient
 
     public function __construct(
         private readonly HttpClientInterface $http,
-        #[Autowire('%env(ELEVENLABS_API_KEY)%')]
-        #[\SensitiveParameter]
-        private readonly string $apiKey,
+        private readonly CurrentAccount $account,
     ) {
     }
 
     public function isConfigured(): bool
     {
-        return '' !== trim($this->apiKey);
+        return '' !== trim($this->account->key('elevenlabs'));
     }
 
     /**
@@ -35,10 +33,11 @@ final class ElevenLabsClient
      */
     public function request(string $method, string $path, array $options = []): ResponseInterface
     {
-        MissingKey::check($this->apiKey, 'ELEVENLABS_API_KEY', 'ElevenLabs');
+        $key = $this->account->key('elevenlabs');
+        MissingKey::check($key, 'ElevenLabs');
         try {
             $response = $this->http->request($method, self::BASE.$path, $options + [
-                'headers' => ['xi-api-key' => $this->apiKey],
+                'headers' => ['xi-api-key' => $key],
                 'timeout' => 120,
             ]);
             $status = $response->getStatusCode();

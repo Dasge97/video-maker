@@ -4,15 +4,16 @@ declare(strict_types=1);
 
 namespace App\Library;
 
+use App\Account\CurrentAccount;
 use App\Providers\OpenAiImages;
 use App\Reference\Images;
 use App\Reference\InputRejected;
 
 /**
- * The images of «Crear imagen», in var/library: <hash>.<ext> and <hash>.json beside it (prompt,
- * kind, model, cost, date). The hash is the one of the kind, the prompt and the image it starts
- * from, so the same request is never paid twice. They can be used as the photo of the person
- * or the logo of a video.
+ * The images of «Crear imagen» of each account, in var/library/<account>: <hash>.<ext> and
+ * <hash>.json beside it (prompt, kind, model, cost, date). The hash is the one of the kind, the
+ * prompt and the image it starts from, so the same request is never paid twice. They can be
+ * used as the photo of the person or the logo of a video.
  */
 final class ImageLibrary
 {
@@ -31,8 +32,20 @@ final class ImageLibrary
 
     public function __construct(
         private readonly OpenAiImages $images,
+        private readonly CurrentAccount $account,
         private readonly string $libraryDir,
     ) {
+    }
+
+    /** The folder of the images of an account. */
+    public function dirOf(string $accountId): string
+    {
+        return $this->libraryDir.'/'.$accountId;
+    }
+
+    private function dir(): string
+    {
+        return $this->dirOf($this->account->require()->id());
     }
 
     /**
@@ -50,8 +63,8 @@ final class ImageLibrary
         }
         $source = null;
         if (null !== $sourcePath) {
-            $source = $this->libraryDir.'/source-'.bin2hex(random_bytes(6)).'.png';
-            is_dir($this->libraryDir) || mkdir($this->libraryDir, 0775, true);
+            $source = $this->dir().'/source-'.bin2hex(random_bytes(6)).'.png';
+            is_dir($this->dir()) || mkdir($this->dir(), 0775, true);
             Images::logo($sourcePath, $source);
         }
         try {
@@ -68,11 +81,11 @@ final class ImageLibrary
         } finally {
             null === $source || @unlink($source);
         }
-        is_dir($this->libraryDir) || mkdir($this->libraryDir, 0775, true);
+        is_dir($this->dir()) || mkdir($this->dir(), 0775, true);
         $file = $hash.'.'.$made['extension'];
-        file_put_contents($this->libraryDir.'/'.$file, $made['bytes']);
+        file_put_contents($this->dir().'/'.$file, $made['bytes']);
         $entry = ['hash' => $hash, 'file' => $file, 'kind' => $kind, 'prompt' => $prompt, 'edited' => null !== $sourcePath, 'usd' => $made['usd'], 'createdAt' => date(\DATE_ATOM)];
-        file_put_contents($this->libraryDir.'/'.$hash.'.json', json_encode($entry, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
+        file_put_contents($this->dir().'/'.$hash.'.json', json_encode($entry, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES));
 
         return $entry;
     }
@@ -83,9 +96,9 @@ final class ImageLibrary
     public function all(?string $kind = null): array
     {
         $entries = [];
-        foreach (glob($this->libraryDir.'/*.json') ?: [] as $json) {
+        foreach (glob($this->dir().'/*.json') ?: [] as $json) {
             $entry = json_decode((string) file_get_contents($json), true);
-            if (\is_array($entry) && is_file($this->libraryDir.'/'.$entry['file']) && (null === $kind || $kind === $entry['kind'])) {
+            if (\is_array($entry) && is_file($this->dir().'/'.$entry['file']) && (null === $kind || $kind === $entry['kind'])) {
                 $entries[] = $entry;
             }
         }
@@ -99,17 +112,17 @@ final class ImageLibrary
      */
     public function get(string $hash): ?array
     {
-        if (1 !== preg_match('/^[0-9a-f]{24}$/', $hash) || !is_file($this->libraryDir.'/'.$hash.'.json')) {
+        if (1 !== preg_match('/^[0-9a-f]{24}$/', $hash) || !is_file($this->dir().'/'.$hash.'.json')) {
             return null;
         }
-        $entry = json_decode((string) file_get_contents($this->libraryDir.'/'.$hash.'.json'), true);
+        $entry = json_decode((string) file_get_contents($this->dir().'/'.$hash.'.json'), true);
 
-        return \is_array($entry) && is_file($this->libraryDir.'/'.$entry['file']) ? $entry : null;
+        return \is_array($entry) && is_file($this->dir().'/'.$entry['file']) ? $entry : null;
     }
 
     public function path(array $entry): string
     {
-        return $this->libraryDir.'/'.$entry['file'];
+        return $this->dir().'/'.$entry['file'];
     }
 
     public function delete(string $hash): bool
@@ -119,7 +132,7 @@ final class ImageLibrary
             return false;
         }
         @unlink($this->path($entry));
-        @unlink($this->libraryDir.'/'.$hash.'.json');
+        @unlink($this->dir().'/'.$hash.'.json');
 
         return true;
     }

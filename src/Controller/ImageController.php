@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Account\CurrentAccount;
+use App\Account\Spending;
 use App\Job\StepFailed;
 use App\Library\ImageLibrary;
 use App\Providers\OpenAiImages;
@@ -24,8 +26,11 @@ use Symfony\Component\Routing\Attribute\Route;
  */
 final class ImageController extends AbstractController
 {
-    public function __construct(private readonly ImageLibrary $library)
-    {
+    public function __construct(
+        private readonly ImageLibrary $library,
+        private readonly CurrentAccount $current,
+        private readonly Spending $spending,
+    ) {
     }
 
     #[Route('/imagenes', name: 'image_index', methods: ['GET'])]
@@ -56,6 +61,10 @@ final class ImageController extends AbstractController
         $source = $request->files->get('source');
         if (null !== $source && (!$source->isValid() || $source->getSize() > 20 * 1024 * 1024)) {
             return new JsonResponse(['errors' => ['source' => 'La imagen de partida debe ser JPEG, PNG o WebP de 20 MB como mucho.']], 422);
+        }
+        $refusal = $this->spending->refusal($this->current->require(), OpenAiImages::ESTIMATED_USD);
+        if (null !== $refusal) {
+            return new JsonResponse(['errors' => ['' => $refusal]], 422);
         }
         set_time_limit(240);
         try {

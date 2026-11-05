@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Providers;
 
+use App\Account\CurrentAccount;
 use Intervention\Image\Alignment;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\Encoders\JpegEncoder;
@@ -51,9 +52,7 @@ final class FalVideoGateway
 
     public function __construct(
         private readonly HttpClientInterface $http,
-        #[Autowire('%env(FAL_KEY)%')]
-        #[\SensitiveParameter]
-        private readonly string $falKey,
+        private readonly CurrentAccount $account,
     ) {
     }
 
@@ -69,7 +68,7 @@ final class FalVideoGateway
      */
     public function submitBody(string $endpoint, array $body): Submitted
     {
-        MissingKey::check($this->falKey, 'FAL_KEY', 'fal.ai');
+        MissingKey::check($this->account->key('fal'), 'fal.ai');
         $sent = false;
         try {
             $response = $this->http->request('POST', self::QUEUE.'/'.ltrim($endpoint, '/'), ['headers' => $this->headers(), 'json' => $body, 'timeout' => 60]);
@@ -104,7 +103,7 @@ final class FalVideoGateway
 
     public function status(GatewayJob $job): JobState
     {
-        MissingKey::check($this->falKey, 'FAL_KEY', 'fal.ai');
+        MissingKey::check($this->account->key('fal'), 'fal.ai');
         try {
             $response = $this->http->request('GET', $this->url($job, 'statusUrl', '/status'), ['headers' => $this->headers(), 'timeout' => 20]);
             $status = $response->getStatusCode();
@@ -278,7 +277,7 @@ final class FalVideoGateway
     private function headers(): array
     {
         return [
-            'Authorization' => 'Key '.$this->falKey,
+            'Authorization' => 'Key '.$this->account->key('fal'),
             'X-Fal-Store-IO' => '0',
             'X-Fal-Object-Lifecycle-Preference' => (string) json_encode(['expiration_duration_seconds' => self::MEDIA_EXPIRATION_SECONDS]),
         ];

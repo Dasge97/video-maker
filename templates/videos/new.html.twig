@@ -2,6 +2,9 @@
 {% import '_icons.html.twig' as ui %}
 {% block title %}Crear anuncio{% endblock %}
 {% block body %}
+{% if missing is not empty %}
+<div class="notice warn" style="margin-bottom: 18px">{{ ui.icon('key') }}<p>Para hacer vídeos te {{ missing|length == 1 ? 'falta la clave' : 'faltan las claves' }} de {{ missing|join(', ', ' y ') }}. <a href="{{ path('settings', {seccion: 'claves'}) }}">Añádelas en Ajustes</a>.</p></div>
+{% endif %}
 <form data-wizard novalidate>
     <div class="wiz-head">
         <button type="button" class="icon-btn" data-back aria-label="Paso anterior">{{ ui.icon('back') }}</button>
@@ -35,6 +38,14 @@
     <section class="wiz-step hidden" data-step="2" aria-labelledby="ask-2">
         <h1 id="ask-2" class="ask">¿Quién sale y de qué marca?</h1>
         <p class="ask-sub">La cara del vídeo sale de la foto: mejor de frente y bien iluminada.</p>
+        {% if brands is not empty %}
+        <span class="label">Tus marcas</span>
+        <div class="saved-brands" role="group" aria-label="Tus marcas guardadas">
+            {% for b in brands %}
+            <button type="button" class="saved-brand" aria-pressed="false" data-brand="{{ b|json_encode|e('html_attr') }}" data-brand-logo="{{ b.logo ? path('brand_logo', {id: b.id}) : '' }}"><span class="brand-logo">{% if b.logo %}<img src="{{ path('brand_logo', {id: b.id}) }}" alt="">{% else %}<span>{{ b.name|first|upper }}</span>{% endif %}</span>{{ b.name }}</button>
+            {% endfor %}
+        </div>
+        {% endif %}
         <div class="slots">
             {% for slot in [{name: 'person', title: 'La persona', icon: 'image', optional: false}, {name: 'logo', title: 'El logo', icon: 'sparkles', optional: true}] %}
             <button type="button" class="slot" data-slot="{{ slot.name }}">
@@ -46,12 +57,13 @@
         </div>
         <input class="sr-only" type="file" name="person" accept="image/jpeg,image/png,image/webp" tabindex="-1">
         <input class="sr-only" type="file" name="logo" accept="image/jpeg,image/png,image/webp" tabindex="-1">
-        <input type="hidden" name="personLibrary"><input type="hidden" name="logoLibrary">
+        <input type="hidden" name="personLibrary"><input type="hidden" name="logoLibrary"><input type="hidden" name="brandId">
         <div class="field-row">
             <div><label class="label" for="brandName">Marca</label><input class="input" id="brandName" name="brandName" maxlength="80" placeholder="Nombre de la marca"></div>
             <div><span class="label">Colores</span><div class="color-pair"><input type="color" name="color1" value="#6d4aff" aria-label="Color principal" data-color><input type="color" name="color2" value="#ffffff" aria-label="Color secundario" data-color><span class="muted small" style="align-self: center" data-colors-help>Salen del logo</span></div></div>
             <div><label class="label" for="font">Tipografía</label><select class="select" id="font" name="font">{% for font in fonts %}<option {{ font == 'Poppins' ? 'selected' }}>{{ font }}</option>{% endfor %}</select></div>
         </div>
+        <label class="check-row"><input type="checkbox" name="saveBrand" value="1" checked>Guardar la marca para otros vídeos</label>
     </section>
 
     {# 3 · Qué se anuncia #}
@@ -183,6 +195,7 @@
     form.querySelector('[data-colors-help]').textContent = colors.length ? 'Del logo' : 'Elígelos tú';
   }
   function chooseLibrary(field, image) {
+    if (field === 'logo') form.brandId.value = '';
     form[`${field}Library`].value = image.hash;
     form[field].value = '';
     fill(field, image.url, image.prompt);
@@ -218,6 +231,29 @@
       if (image) chooseLibrary(field, image);
     }
   })();
+
+  // ---- 2 · a saved brand fills the logo, the name, the colours, the font and the forbidden words ----
+  const brandButtons = [...form.querySelectorAll('[data-brand]')];
+  function chooseBrand(button) {
+    const brand = JSON.parse(button.dataset.brand);
+    brandButtons.forEach((b) => b.setAttribute('aria-pressed', String(b === button)));
+    form.brandId.value = brand.id;
+    form.brandName.value = brand.name;
+    form.querySelectorAll('[data-color]').forEach((input, i) => { if (brand.colors[i]) input.value = brand.colors[i].toLowerCase(); });
+    form.querySelector('[data-colors-help]').textContent = 'De tu marca';
+    if ([...form.font.options].some((o) => o.value === brand.font)) form.font.value = brand.font;
+    form.forbiddenWords.value = (brand.forbiddenWords || []).join(', ');
+    if (button.dataset.brandLogo) {
+      form.logo.value = '';
+      form.logoLibrary.value = '';
+      fill('logo', button.dataset.brandLogo, brand.name);
+    }
+  }
+  brandButtons.forEach((b) => b.addEventListener('click', () => chooseBrand(b)));
+  // An uploaded logo replaces the one of the brand.
+  form.logo.addEventListener('change', () => { form.brandId.value = ''; });
+  const presetBrand = brandButtons.find((b) => JSON.parse(b.dataset.brand).id === params.get('marca'));
+  if (presetBrand) chooseBrand(presetBrand);
 
   // ---- 4 · mode, voice, duration and quality ----
   form.querySelectorAll('[data-mode]').forEach((b) => b.addEventListener('click', () => {

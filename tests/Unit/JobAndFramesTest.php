@@ -51,7 +51,10 @@ final class JobAndFramesTest extends TestCase
     {
         $dir = sys_get_temp_dir().'/vm-test-'.bin2hex(random_bytes(4));
         $store = new JobStore($dir);
-        $job = $store->create(['mode' => 'voice_over']);
+        $job = $store->create(['mode' => 'voice_over'], 'cuenta');
+        self::assertSame('cuenta', $job->owner());
+        self::assertCount(1, $store->all('cuenta'));
+        self::assertSame([], $store->all('otra'));
         self::assertSame('analysing', $job->status());
         self::assertSame('check', $job->step());
 

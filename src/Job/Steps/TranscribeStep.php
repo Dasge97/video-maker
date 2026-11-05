@@ -10,8 +10,9 @@ use App\Reference\Transcriber;
 use App\Reference\VideoTools;
 
 /**
- * What is said in the reference, with AI Hub. Without audio, or when AI Hub fails, the agent
- * works with the frames only and the proposal says so: it never stops the video.
+ * What is said in the reference, with the AI Hub of the account or ElevenLabs. Without audio, or
+ * when the transcription fails, the agent works with the frames only and the proposal says so:
+ * it never stops the video.
  */
 final class TranscribeStep implements Step
 {
@@ -34,9 +35,12 @@ final class TranscribeStep implements Step
             if (true === $job->data['reference']['hasAudio']) {
                 $audio = $job->path('reference/audio.wav');
                 $result = $this->tools->audio($job->path((string) $job->input()['referenceFile']), $audio)
-                    ? $this->transcriber->transcribe($audio)
+                    ? $this->transcriber->transcribe($audio, (float) $job->data['reference']['durationSeconds'])
                     : ['available' => false, 'reason' => 'No se ha podido sacar el audio de la referencia.'];
                 @unlink($audio);
+                if (($result['usd'] ?? 0) > 0) {
+                    $job->addCost('Transcripción de la referencia', (float) $result['usd']);
+                }
                 $job->log('Transcripción: '.(true === $result['available'] ? \count($result['segments']).' tramos' : $result['reason']));
             }
             file_put_contents($file, json_encode($result, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_THROW_ON_ERROR));

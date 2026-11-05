@@ -5,6 +5,7 @@
 <div class="head">
     <h1 class="h1">Mis vídeos</h1>
     <span class="spacer"></span>
+    <a class="badge {{ limit is not null and spent >= limit ? 'warn' }}" href="{{ path('settings', {seccion: 'gasto'}) }}" title="Lo gastado este mes">{{ ui.icon('wallet', 'icon-16') }}<span class="num">{{ spent|number_format(2, ',', '.') }} ${% if limit is not null %} de {{ limit|number_format(0, ',', '.') }} ${% endif %}</span> este mes</a>
     <a class="btn btn-primary" href="{{ path('video_new') }}">{{ ui.icon('plus') }}Crear anuncio</a>
 </div>
 
@@ -30,6 +31,7 @@
     {% for job in jobs %}
     {% set s = labels[job.status] ?? [job.status, 'info'] %}
     {% set dot = {success: '', danger: 'bad', primary: 'idle'}[s[1]] ?? 'run' %}
+    <div class="vid-wrap">
     <a class="vid" href="{{ path('video_show', {id: job.id}) }}">
         <div class="thumb">
             {% if job.data.result %}<img src="{{ path('video_file', {id: job.id, path: 'out/poster.jpg'}) }}" alt="" loading="lazy">{% else %}<div class="bg g{{ (loop.index % 6) + 1 }}"></div>{% endif %}
@@ -38,6 +40,10 @@
         </div>
         <div class="meta">{{ job.data.input.brand.name ?: (job.data.input.product|length > 40 ? job.data.input.product|slice(0, 40) ~ '…' : job.data.input.product) }}<small>{{ job.data.createdAt|date('d/m/Y H:i') }} · {{ job.data.input.mode == 'voice_over' ? 'Voz en off' : 'Persona a cámara' }}</small></div>
     </a>
+    {% if job.status not in busy %}
+    <button type="button" class="vid-del" data-post="{{ path('video_delete', {id: job.id}) }}" data-confirm-title="¿Borrar este vídeo?" data-confirm-text="Se borran el vídeo, la propuesta y todo lo generado. No se puede deshacer." data-confirm-ok="Borrar" data-danger data-reload aria-label="Borrar vídeo"><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}</button>
+    {% endif %}
+    </div>
     {% endfor %}
 </div>
 {% endif %}

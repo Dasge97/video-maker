@@ -4,6 +4,9 @@ declare(strict_types=1);
 
 namespace App\Command;
 
+use App\Account\AccountStore;
+use App\Account\CurrentAccount;
+use App\Account\Spending;
 use App\Job\Job;
 use App\Job\JobStore;
 use App\Job\Step;
@@ -23,7 +26,8 @@ use Symfony\Component\DependencyInjection\Attribute\AutowireIterator;
  * The only background process. Every TICK seconds it reads var/jobs/*\/job.json and, for each
  * video in a status with steps, does its steps in order with the lock of the video, until one
  * waits (a clip in fal's queue) or the status is done. The state is always the file: closing
- * the worker and opening it again goes on where it was.
+ * the worker and opening it again goes on where it was. Each video is made with the keys of the
+ * account that owns it, and stops when the month of that account reaches its spending limit.
  */
 #[AsCommand(name: 'app:worker', description: 'Hace los pasos pendientes de los vídeos')]
 final class WorkerCommand extends Command
@@ -32,6 +36,8 @@ final class WorkerCommand extends Command
     /** A provider busy or unreachable: wait this long and try again, this many times. */
     private const UNAVAILABLE_WAIT = 30;
     private const MAX_UNAVAILABLE = 5;
+    /** Steps that pay nothing: the spending limit is not looked at before them. */
+    private const FREE_STEPS = ['check', 'frames', 'assemble'];
 
     /** @var array<string, Step> */
     private array $steps = [];
@@ -41,6 +47,9 @@ final class WorkerCommand extends Command
      */
     public function __construct(
         private readonly JobStore $store,
+        private readonly AccountStore $accounts,
+        private readonly CurrentAccount $current,
+        private readonly Spending $spending,
         #[AutowireIterator('app.step')]
         iterable $steps,
     ) {
@@ -72,9 +81,21 @@ final class WorkerCommand extends Command
         return Command::SUCCESS;
     }
 
-    /** Steps in order until one waits, fails, or the status has no more steps. */
+    /** Steps in order, as the owner of the video, until one waits, fails, or the status has no more steps. */
     public function work(Job $job, ?OutputInterface $output = null): void
     {
+        $owner = null === $job->owner() ? null : $this->accounts->get($job->owner());
+        if (null === $owner) {
+            $job->fail('Este vídeo no es de ninguna cuenta: no se sabe con qué claves hacerlo.');
+
+            return;
+        }
+        $this->current->runAs($owner, fn () => $this->steps($job, $output));
+    }
+
+    private function steps(Job $job, ?OutputInterface $output): void
+    {
+        $owner = $this->current->require();
         while (isset(Job::STEPS[$job->status()])) {
             $name = (string) $job->step();
             $step = $this->steps[$name] ?? null;
@@ -84,6 +105,18 @@ final class WorkerCommand extends Command
             }
             if (($job->data['waitUntil'] ?? 0) > time()) {
                 break;
+            }
+            // The limit is looked at once when a paid step starts, never halfway through one: a
+            // clip already sent to fal is always collected.
+            $at = $job->status().':'.$name;
+            if (!\in_array($name, self::FREE_STEPS, true) && ($job->data['limitCheckedAt'] ?? null) !== $at) {
+                $refusal = $this->spending->refusal($owner);
+                if (null !== $refusal) {
+                    $job->log('Parado por el límite de gasto en '.$name);
+                    $job->fail($refusal);
+                    break;
+                }
+                $job->data['limitCheckedAt'] = $at;
             }
             $output?->writeln(\sprintf('[%s] %s: %s', date('H:i:s'), $job->id(), $name));
             try {

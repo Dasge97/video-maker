@@ -1,15 +1,15 @@
 # 5. Proveedores
 
-Todas las claves van en `.env.local`, que no se versiona. Ver `CLAUDE.md`, sección «Claves de los
-proveedores».
+Las claves son de cada cuenta: cada persona pone las suyas en «Ajustes» y se guardan cifradas
+(ver [09-cuentas.md](09-cuentas.md)). El servidor no tiene claves de proveedores.
 
-| Variable | Para qué |
+| Clave o variable | Para qué |
 |---|---|
-| `FAL_KEY` | Clips y persona hablando |
-| `ELEVENLABS_API_KEY` | Voz y música |
-| `OPENAI_API_KEY`, `OPENAI_IMAGE_MODEL` | Imágenes de arranque y fondos. Modelo por defecto `gpt-image-2.5-sunburst`, el mejor editando según `src/Ai/AiModels.php` de new-studio |
-| `ANTHROPIC_API_KEY`, `ANTHROPIC_MODEL` | El agente |
-| `AIHUB_URL`, `AIHUB_API_KEY` | Transcripción de la referencia |
+| fal.ai | Clips y persona hablando |
+| ElevenLabs | Voz, música y transcripción de la referencia cuando la cuenta no tiene AI Hub |
+| OpenAI; `OPENAI_IMAGE_MODEL` | Imágenes de arranque y fondos. Modelo por defecto `gpt-image-2.5-sunburst`, el mejor editando según `src/Ai/AiModels.php` de new-studio |
+| Anthropic; `ANTHROPIC_MODEL` | El agente |
+| AI Hub, dirección y clave (opcional) | Transcripción de la referencia |
 | `VIDEO_MODEL` | `balanced` (por defecto) o `high` |
 
 Los precios de fal.ai se comprobaron el 25-10-2026 con su API de precios

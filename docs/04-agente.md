@@ -65,7 +65,8 @@ new-studio y se copian como constantes.
 | Ritmo de la voz | Palabras de `voice` ≤ 2,5 × `plannedSeconds` de cada pieza. Una cifra cuenta como una palabra |
 | Duración total | La suma de `plannedSeconds` está dentro del 10 % de la pedida, con un margen mínimo de 1 s. Además, la duración estimada de cada pieza con voz, `max(plannedSeconds, palabras / 2)`, sumada, tampoco se sale de ese margen |
 | Rótulos legibles | `text` ≤ 40 caracteres. El tiempo que cubren sus piezas ≥ `max(1,5, palabras / 2)` |
-| Rótulos bien colocados | `fromPiece` ≤ `toPiece` ≤ número de piezas. Dos rótulos no comparten posición en la misma pieza. El overlay `logo` no cubre un `logo_card`. Ningún rótulo `top` o `center` cubre una pieza `talking_person` |
+| Rótulos bien colocados | `fromPiece` ≤ `toPiece` ≤ número de piezas. Dos rótulos no comparten posición en la misma pieza. El overlay `logo` no cubre un `logo_card`. Ningún rótulo cubre una pieza `talking_person` (arriba tapaba la cara y abajo lo que enseña). En un `generated_clip` con la persona, solo rótulos abajo |
+| Voz como se dice | La voz no lleva símbolos ni abreviaturas (€, $, %, «20 h», «5 min»…): ElevenLabs leía «veinte hache» y «uros». Los rótulos sí pueden llevarlos |
 | Un texto, una vez | El texto de un rótulo no repite el de una `text_card` o un `logo_card` de la misma pieza |
 | Campos por tipo | `scene` solo y siempre en `talking_person`, `generated_clip` e `image_motion`. `motion` solo y siempre en `image_motion`. `card` en `text_card`. `logo` en `logo_card`. `startImage` obligatorio en `talking_person` e `image_motion` |
 | Modo | `voice_over`: ninguna pieza `talking_person`. `talking_person`: al menos una, y la suma de sus `plannedSeconds` ≥ la mitad de la duración. Cada `talking_person` lleva voz y dura de 2 a 10 s |

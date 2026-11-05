@@ -15,6 +15,12 @@ Una cuarta pantalla, «Mis vídeos», lista las carpetas de `var/jobs` con fecha
 
 Una quinta pantalla, «Crear imagen», está fuera de la barra de pasos (ver más abajo).
 
+Desde el 27-10-2026 hay además «Entrar», «Crear cuenta» (solo con `REGISTRO_ABIERTO=1`) y
+«Ajustes», con cuatro pestañas: Claves, Gasto, Marcas y Cuenta. «Mis vídeos» enseña el gasto
+del mes y un botón de borrar en cada vídeo que no está en marcha. El paso 2 de «Subir» enseña las
+marcas guardadas y la casilla «Guardar la marca para otros vídeos». Detalle en
+[09-cuentas.md](09-cuentas.md).
+
 ## 1. Subir
 
 Un solo formulario:

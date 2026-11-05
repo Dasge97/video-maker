@@ -42,6 +42,8 @@ final class PlanChecks
     public const TALKING_MIN_SECONDS = 2.0;
     public const TALKING_MAX_SECONDS = 10.0;
     public const DEFAULT_MAX_PAID_CLIPS = 5;
+    /** Symbols and abbreviations a voice reads badly: €, $, %, &, @, «20 h», «5 min», «3 km»… */
+    private const NOT_SPOKEN = '/[€$%&@#+\/]|\d\s*(h|hrs?|min|seg|s|km|kg|gr?|cm|mm|ml|l|m2|uds?)\b\.?|\b(aprox|tel|nº|n\.º|etc)\b\.?/iu';
 
     private const WITH_SCENE = ['talking_person', 'generated_clip', 'image_motion'];
     private const PAID = ['talking_person', 'generated_clip'];
@@ -72,6 +74,7 @@ final class PlanChecks
         return self::fields($pieces)
             + self::mode($pieces, $data)
             + self::voice($pieces)
+            + self::spoken($pieces)
             + self::duration($pieces, (float) $data['durationSeconds'])
             + self::overlays($plan, $pieces, (bool) $data['hasLogo'])
             + self::readability($plan, $pieces)
@@ -182,6 +185,27 @@ final class PlanChecks
     }
 
     /**
+     * The voice written as it is said: ElevenLabs read «20 h» as «veinte hache» and «4,50 €» with
+     * «uros» (first real ads of video-maker). The labels on screen may keep the symbols.
+     *
+     * @param list<array<string, mixed>> $pieces
+     *
+     * @return array<string, string>
+     */
+    public static function spoken(array $pieces): array
+    {
+        $errors = [];
+        foreach ($pieces as $j => $piece) {
+            $voice = (string) ($piece['voice'] ?? '');
+            if (1 === preg_match(self::NOT_SPOKEN, $voice, $m)) {
+                $errors["pieces/$j/voice"] ??= \sprintf('La voz de la pieza %d lleva «%s»: escríbela como se dice («euros», «horas», «por ciento», «minutos»), sin símbolos ni abreviaturas.', $j + 1, trim($m[0]));
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
      * The pieces add up to the duration asked, and so does the video the voice will make.
      *
      * @param list<array<string, mixed>> $pieces
@@ -261,8 +285,12 @@ final class PlanChecks
             $position = (string) $overlay['position'];
             for ($p = $from; $p <= $to; ++$p) {
                 $piece = $pieces[$p - 1];
-                if ('talking_person' === $piece['kind'] && 'bottom' !== $position) {
-                    $errors["overlays/$k"] ??= \sprintf('La pieza %d es la persona hablando a cámara: un rótulo %s le taparía la cara. Ponlo abajo (bottom) o en otras piezas.', $p, self::POSITIONS[$position] ?? $position);
+                // Over the person speaking a label covered her face (top, center) or what she
+                // shows (bottom), and the subtitles already say the same: none there.
+                if ('talking_person' === $piece['kind']) {
+                    $errors["overlays/$k"] ??= \sprintf('La pieza %d es la persona hablando a cámara: un rótulo le taparía la cara o lo que enseña, y los subtítulos ya llevan el mensaje. Ponlo en otras piezas.', $p);
+                } elseif ('bottom' !== $position && true === ($piece['scene']['withPerson'] ?? false)) {
+                    $errors["overlays/$k"] ??= \sprintf('En la pieza %d sale la persona: un rótulo %s le taparía la cara. Ponlo abajo (bottom) o en otras piezas.', $p, self::POSITIONS[$position] ?? $position);
                 }
                 $reserved = self::RESERVED[$piece['kind']] ?? null;
                 if (null !== $reserved && $reserved[0] === $position) {

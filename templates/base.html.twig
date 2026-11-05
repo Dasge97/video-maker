@@ -19,13 +19,19 @@
 <header class="top">
     <div class="top-in">
         <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>video-maker</span></a>
+        {% if app.user %}
         <nav class="top-tabs" aria-label="Secciones">
             <a class="top-tab" href="{{ path('video_new') }}" {{ route == 'video_new' ? 'aria-current="page"' }}>{{ ui.icon('sparkles') }}<span>Crear anuncio</span></a>
             <a class="top-tab" href="{{ path('video_list') }}" {{ route starts with 'video_' and route != 'video_new' ? 'aria-current="page"' }}>{{ ui.icon('film') }}<span>Mis vídeos</span></a>
             <a class="top-tab" href="{{ path('image_index') }}" {{ route starts with 'image_' ? 'aria-current="page"' }}>{{ ui.icon('image') }}<span>Imágenes</span></a>
         </nav>
+        {% endif %}
         <span class="spacer"></span>
         <button type="button" class="icon-btn" data-theme-toggle aria-label="Cambiar entre modo claro y oscuro">{{ ui.icon('moon') }}</button>
+        {% if app.user %}
+        <a class="icon-btn" href="{{ path('settings') }}" {{ route == 'settings' ? 'aria-current="page"' }} aria-label="Ajustes" title="Ajustes">{{ ui.icon('settings') }}</a>
+        <a class="icon-btn" href="{{ path('logout') }}" aria-label="Salir de {{ app.user.name }}" title="Salir ({{ app.user.email }})">{{ ui.icon('logout') }}</a>
+        {% endif %}
     </div>
 </header>
 <main class="page">

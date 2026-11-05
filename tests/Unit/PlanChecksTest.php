@@ -75,15 +75,36 @@ final class PlanChecksTest extends TestCase
 
     public function testNoLabelCoversTheFaceOfThePersonSpeaking(): void
     {
+        // Over the person speaking, no label in any position.
         $plan = self::plan();
+        $plan['overlays'][0]['fromPiece'] = 1;
+        $plan['overlays'][0]['toPiece'] = 1;
+        self::assertStringContainsString('lo que enseña', PlanChecks::errors($plan, self::data())['overlays/0']);
+
+        // Over a clip where she appears, only at the bottom.
+        $plan = self::plan();
+        $plan['pieces'][1]['scene']['withPerson'] = true;
         $plan['overlays'][0]['position'] = 'top';
         self::assertStringContainsString('la cara', PlanChecks::errors($plan, self::data())['overlays/0']);
+        $plan['overlays'][0]['position'] = 'bottom';
+        self::assertArrayNotHasKey('overlays/0', PlanChecks::errors($plan, self::data()));
+    }
+
+    public function testTheVoiceIsWrittenAsItIsSaid(): void
+    {
+        $plan = self::plan();
+        $plan['pieces'][2]['voice'] = 'Solo 5,99 € al mes.';
+        self::assertStringContainsString('«€»', PlanChecks::errors($plan, self::data())['pieces/2/voice']);
+        $plan['pieces'][2]['voice'] = 'Abierto de 8 a 20 h.';
+        self::assertArrayHasKey('pieces/2/voice', PlanChecks::spoken($plan['pieces']));
+        $plan['pieces'][2]['voice'] = 'Solo 5,99 euros al mes, de 8 a 20 horas.';
+        self::assertSame([], PlanChecks::spoken($plan['pieces']));
     }
 
     public function testTwoLabelsDoNotShareAPositionNorRepeatAText(): void
     {
         $plan = self::plan();
-        $plan['overlays'][] = ['kind' => 'label', 'text' => 'Sin esperas', 'fromPiece' => 1, 'toPiece' => 2, 'position' => 'bottom'];
+        $plan['overlays'][] = ['kind' => 'label', 'text' => 'Sin esperas', 'fromPiece' => 2, 'toPiece' => 2, 'position' => 'bottom'];
         self::assertStringContainsString('misma posición', PlanChecks::errors($plan, self::data())['overlays/2']);
 
         $plan = self::plan();
@@ -221,7 +242,7 @@ final class PlanChecksTest extends TestCase
                     'logo' => ['text' => 'Descárgala gratis', 'background' => null]],
             ],
             'overlays' => [
-                ['kind' => 'hook', 'text' => 'Aparca sin vueltas', 'fromPiece' => 1, 'toPiece' => 1, 'position' => 'bottom'],
+                ['kind' => 'hook', 'text' => 'Aparca sin vueltas', 'fromPiece' => 2, 'toPiece' => 2, 'position' => 'bottom'],
                 ['kind' => 'logo', 'text' => '', 'fromPiece' => 1, 'toPiece' => 3, 'position' => 'top'],
             ],
             'subtitles' => true,

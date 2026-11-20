@@ -126,13 +126,13 @@ final class AssembleStep implements Step
                     $render += null === $source ? ['kind' => 'card'] : ['kind' => 'image', 'source' => $source, 'motion' => $piece['motion'] ?? 'zoom_in'];
                     break;
                 case 'text_card':
-                    $background = null === ($piece['card']['background'] ?? null) ? null : $image($i, 'background');
+                    $background = $image($i, 'background');
                     $render += ['kind' => 'card'] + (null === $background ? [] : ['source' => $background, 'motion' => 'zoom_in']);
                     // Over an image the text goes in a box of the colour of the brand.
                     $cards[] = ['text' => (string) $piece['card']['text'], 'start' => $start, 'end' => $start + $seconds, 'style' => null === $background ? 'Card' : 'CardBox'];
                     break;
                 case 'logo_card':
-                    $background = null === ($piece['logo']['background'] ?? null) ? null : $image($i, 'background');
+                    $background = $image($i, 'background');
                     if (null === $logoFile) {
                         $warnings[] = 'No hay logo: el cierre va como tarjeta de texto.';
                     } elseif (null === $background) {

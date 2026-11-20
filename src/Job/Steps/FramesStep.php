@@ -26,7 +26,7 @@ final class FramesStep implements Step
     {
         $index = $job->path('reference/frames.json');
         if (!is_file($index)) {
-            $frames = $this->frames->extract($job->path((string) $job->input()['referenceFile']), (float) $job->data['reference']['durationSeconds'], $job->path('reference'));
+            $frames = true === ($job->data['reference']['none'] ?? false) ? [] : $this->frames->extract($job->path((string) $job->input()['referenceFile']), (float) $job->data['reference']['durationSeconds'], $job->path('reference'));
             file_put_contents($index, json_encode($frames, \JSON_PRETTY_PRINT | \JSON_THROW_ON_ERROR));
         }
         $job->data['reference']['frames'] = \count(json_decode((string) file_get_contents($index), true, 512, \JSON_THROW_ON_ERROR));

@@ -21,12 +21,16 @@ final class ImageLibrary
     public const KINDS = [
         'person' => ['size' => '1024x1536', 'transparent' => false, 'label' => 'Persona'],
         'logo' => ['size' => '1024x1024', 'transparent' => true, 'label' => 'Logo'],
+        'product' => ['size' => '1024x1024', 'transparent' => false, 'label' => 'Producto'],
+        'place' => ['size' => '1024x1536', 'transparent' => false, 'label' => 'Lugar o fondo'],
         'other' => ['size' => '1024x1024', 'transparent' => false, 'label' => 'Otra'],
     ];
     /** What each kind adds to the prompt of the person. */
     private const HINTS = [
         'person' => 'Retrato fotográfico realista y natural de una sola persona, de frente o de tres cuartos, de medio cuerpo, mirando a cámara, con luz suave. Sin textos.',
         'logo' => 'Logotipo limpio y simple, plano, centrado, sobre fondo transparente, legible a tamaño pequeño.',
+        'product' => 'Fotografía de producto realista: el objeto entero, centrado, de frente, sobre fondo liso claro, con luz de estudio suave. Sin textos añadidos ni personas.',
+        'place' => 'Fotografía realista y vertical de un lugar, sin personas, con luz natural y sitio libre en el centro. Sin textos.',
         'other' => '',
     ];
 
@@ -56,7 +60,7 @@ final class ImageLibrary
         // A client that does not send UTF-8 (a Windows console) would break the JSON to OpenAI.
         $prompt = trim(mb_check_encoding($prompt, 'UTF-8') ? $prompt : mb_convert_encoding($prompt, 'UTF-8', 'Windows-1252'));
         if (!isset(self::KINDS[$kind])) {
-            throw new InputRejected('Elige si es una persona, un logo u otra imagen.');
+            throw new InputRejected('Elige qué tipo de imagen es.');
         }
         if (mb_strlen($prompt) < 3 || mb_strlen($prompt) > 2000) {
             throw new InputRejected('Describe la imagen en entre 3 y 2.000 caracteres.');

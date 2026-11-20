@@ -66,7 +66,14 @@
                 "maxLength": 800,
                 "description": "Primer fotograma que se genera antes con el modelo de imágenes. Obligatorio en talking_person e image_motion. En generated_clip, cuando se ve una pantalla o hay que fijar la composición."
               },
-              "imitateFrame": { "type": ["integer", "null"], "minimum": 0, "description": "Fotograma de la referencia cuyo movimiento y encuadre se imitan." }
+              "imitateFrame": { "type": ["integer", "null"], "minimum": 0, "description": "Fotograma de la referencia cuyo movimiento y encuadre se imitan." },
+              "elements": {
+                "type": "array",
+                "maxItems": 2,
+                "uniqueItems": true,
+                "items": { "type": "string", "maxLength": 60 },
+                "description": "Nombres de los productos y lugares de los datos que salen en esta pieza, tal como vienen en `elements`."
+              }
             }
           },
           "motion": { "enum": ["zoom_in", "zoom_out", "pan_left", "pan_right"], "description": "Solo en image_motion." },

@@ -18,7 +18,7 @@ namespace App\Prompt;
  */
 final class PromptBuilder
 {
-    private const IMITATE = ['movement' => 'its movement', 'framing' => 'its framing', 'style' => 'its style'];
+    private const IMITATE = ['movement' => 'its movement', 'framing' => 'its framing', 'style' => 'its style', 'setting' => 'its setting, keep the place as it is'];
 
     /** A clause that speaks of something written on screen (Spanish and English). */
     private const WRITTEN = '/(tipogr[aá]f|fuentes? (tipogr|de letra)|\bfont|typeface|typograph|\bletras?\b|lettering|\btextos?\b|\btext\b|r[oó]tulo|subt[ií]tul|caption|\blog(o|otipo)s?\b|semibold|\bbold\b|negrita|eslogan|slogan|hashtag|watermark|marca de agua|\bescrit[oa]s?\b|\bwritten\b|\btitular\b|headline)/iu';

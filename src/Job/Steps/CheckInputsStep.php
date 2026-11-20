@@ -32,17 +32,28 @@ final class CheckInputsStep implements Step
     {
         $input = $job->input();
         $reference = $input['referenceFile'] ?? null;
-        if (null === $reference && \is_string($input['referenceUrl'] ?? null)) {
-            $reference = $this->download($job, $input['referenceUrl']);
-            $job->data['input']['referenceFile'] = $reference;
+        if (true === ($input['noReference'] ?? false)) {
+            // Without a reference the agent proposes a structure of its own: nothing to read.
+            $job->data['reference'] = ['none' => true, 'durationSeconds' => 0.0, 'hasAudio' => false, 'frames' => 0, 'transcript' => false];
+        } else {
+            if (null === $reference && \is_string($input['referenceUrl'] ?? null)) {
+                $reference = $this->download($job, $input['referenceUrl']);
+                $job->data['input']['referenceFile'] = $reference;
+            }
+            if (!\is_string($reference) || !is_file($job->path($reference))) {
+                throw new InputRejected('Falta el vídeo de referencia.');
+            }
+            $probe = $this->tools->probe($job->path($reference));
+            $job->data['reference'] = ['durationSeconds' => round($probe['duration'], 2), 'hasAudio' => $probe['hasAudio'], 'frames' => 0, 'transcript' => false];
         }
-        if (!\is_string($reference) || !is_file($job->path($reference))) {
-            throw new InputRejected('Falta el vídeo de referencia.');
-        }
-        $probe = $this->tools->probe($job->path($reference));
-        $job->data['reference'] = ['durationSeconds' => round($probe['duration'], 2), 'hasAudio' => $probe['hasAudio'], 'frames' => 0, 'transcript' => false];
 
         Images::person($job->path((string) $input['personFile']), $job->path('input/person.jpg'));
+        // Products and places: each one as a JPEG of its own, the image the agent and the models see.
+        foreach ($input['elements'] ?? [] as $n => $element) {
+            $path = \sprintf('input/element-%d.jpg', $n + 1);
+            Images::person($job->path((string) $element['file']), $job->path($path));
+            $job->data['input']['elements'][$n]['path'] = $path;
+        }
         $job->data['input']['hasLogo'] = false;
         if (\is_string($input['logoFile'] ?? null)) {
             Images::logo($job->path($input['logoFile']), $job->path('input/logo.png'));

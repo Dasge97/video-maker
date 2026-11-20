@@ -47,6 +47,7 @@ final class PlanAgent
             'mode' => $data['mode'], 'durationSeconds' => $data['durationSeconds'], 'product' => $data['product'], 'note' => $data['note'],
             'brand' => $data['brand'], 'hasLogo' => $data['hasLogo'], 'frames' => (int) $job->data['reference']['frames'],
             'maxPaidClips' => $this->maxPaidClips,
+            'elements' => array_column($data['elements'], 'name'),
         ];
     }
 
@@ -151,7 +152,10 @@ final class PlanAgent
                 'forbiddenWords' => array_values($input['brand']['forbiddenWords'] ?? []),
             ],
             'hasLogo' => true === ($input['hasLogo'] ?? false),
-            'reference' => [
+            // Products and places that must appear as they are; each one's image goes before the data.
+            'elements' => array_map(static fn (array $e) => ['name' => (string) $e['name'], 'kind' => (string) $e['kind'], 'cards' => true === ($e['cards'] ?? false)], $input['elements'] ?? []),
+            // null: the person gave no reference and the agent proposes a structure of its own.
+            'reference' => true === ($job->data['reference']['none'] ?? false) ? null : [
                 'durationSeconds' => (float) $job->data['reference']['durationSeconds'],
                 'transcript' => $transcript,
             ],
@@ -178,6 +182,10 @@ final class PlanAgent
         if ($data['hasLogo']) {
             $blocks[] = ['type' => 'text', 'text' => 'Logo de la marca'];
             $blocks[] = self::image(Images::jpegBase64($job->path('input/logo.png'), self::LOGO_SIDE));
+        }
+        foreach ($job->input()['elements'] ?? [] as $element) {
+            $blocks[] = ['type' => 'text', 'text' => \sprintf('%s «%s»', 'place' === $element['kind'] ? 'Lugar' : 'Producto', $element['name'])];
+            $blocks[] = self::image(Images::jpegBase64($job->path((string) $element['path']), self::PERSON_SIDE));
         }
         $blocks[] = ['type' => 'text', 'text' => "Datos del vídeo:\n".json_encode($data, \JSON_PRETTY_PRINT | \JSON_UNESCAPED_UNICODE | \JSON_UNESCAPED_SLASHES)];
 

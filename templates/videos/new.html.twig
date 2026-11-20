@@ -20,7 +20,9 @@
         <div class="tgs" role="radiogroup" aria-label="Cómo das la referencia" style="margin-bottom: 16px">
             <button type="button" class="tg" role="radio" aria-checked="true" data-ref-kind="file">{{ ui.icon('upload', 'icon-16') }}Subir vídeo</button>
             <button type="button" class="tg" role="radio" aria-checked="false" data-ref-kind="url">{{ ui.icon('link', 'icon-16') }}Pegar enlace</button>
+            <button type="button" class="tg" role="radio" aria-checked="false" data-ref-kind="none">{{ ui.icon('sparkles', 'icon-16') }}Sin referencia</button>
         </div>
+        <input type="hidden" name="noReference" value="">
         <label class="drop" data-drop>
             <span class="plus" data-drop-icon>{{ ui.icon('film', 'icon-28') }}</span>
             <video class="hidden" muted playsinline preload="metadata" data-drop-preview></video>
@@ -32,6 +34,7 @@
             <input class="big-url" type="url" id="referenceUrl" name="referenceUrl" inputmode="url" placeholder="https://www.instagram.com/reel/…">
             <p class="muted small" style="margin-top: 10px">Instagram, TikTok o YouTube. Si Instagram pide iniciar sesión, descarga el vídeo y súbelo.</p>
         </div>
+        <div class="summary hidden" data-none-box>{{ ui.icon('sparkles') }}<span>Sin referencia, el agente propone la estructura de un Reel que funciona: <b>gancho</b>, el problema, tu producto como respuesta y la <b>llamada a la acción</b>. Si quieres un estilo concreto, cuéntalo en el paso 3.</span></div>
     </section>
 
     {# 2 · La persona y la marca #}
@@ -46,6 +49,7 @@
             {% endfor %}
         </div>
         {% endif %}
+        <div class="slots-row">
         <div class="slots">
             {% for slot in [{name: 'person', title: 'La persona', icon: 'image', optional: false}, {name: 'logo', title: 'El logo', icon: 'sparkles', optional: true}] %}
             <button type="button" class="slot" data-slot="{{ slot.name }}">
@@ -55,9 +59,19 @@
             </button>
             {% endfor %}
         </div>
+        {# Los productos y lugares, a la derecha de la persona y el logo: todo en una fila. #}
+        <div class="slots-elements">
+            <span class="slot-head" style="margin-bottom: 4px"><span class="ic">{{ ui.icon('tag') }}</span>Productos y lugares<span class="opt">Opcional, hasta {{ maxElements }}</span></span>
+            <p class="muted small" style="margin: 0 0 10px">Lo que tiene que salir tal como es: tu producto, tu tienda, un fondo.</p>
+            <div class="element-grid" data-elements>
+                <button type="button" class="element-add" data-element-add>{{ ui.icon('plus') }}Añadir elemento</button>
+            </div>
+        </div>
+        </div>
         <input class="sr-only" type="file" name="person" accept="image/jpeg,image/png,image/webp" tabindex="-1">
         <input class="sr-only" type="file" name="logo" accept="image/jpeg,image/png,image/webp" tabindex="-1">
         <input type="hidden" name="personLibrary"><input type="hidden" name="logoLibrary"><input type="hidden" name="brandId">
+
         <div class="field-row">
             <div><label class="label" for="brandName">Marca</label><input class="input" id="brandName" name="brandName" maxlength="80" placeholder="Nombre de la marca"></div>
             <div><span class="label">Colores</span><div class="color-pair"><input type="color" name="color1" value="#6d4aff" aria-label="Color principal" data-color><input type="color" name="color2" value="#ffffff" aria-label="Color secundario" data-color><span class="muted small" style="align-self: center" data-colors-help>Salen del logo</span></div></div>
@@ -124,6 +138,7 @@
     </div>
     <div class="dialog-actions"><button type="button" class="btn btn-ghost btn-sm" data-picker-close>Cerrar</button></div>
 </dialog>
+{{ include('_element_dialog.html.twig') }}
 {% endblock %}
 
 {% block scripts %}
@@ -155,8 +170,11 @@
   form.querySelectorAll('[data-ref-kind]').forEach((b) => b.addEventListener('click', () => {
     refKind = b.dataset.refKind;
     form.querySelectorAll('[data-ref-kind]').forEach((o) => o.setAttribute('aria-checked', String(o === b)));
-    drop.classList.toggle('hidden', refKind === 'url');
+    drop.classList.toggle('hidden', refKind !== 'file');
     form.querySelector('[data-url-box]').classList.toggle('hidden', refKind !== 'url');
+    form.querySelector('[data-none-box]').classList.toggle('hidden', refKind !== 'none');
+    form.noReference.value = refKind === 'none' ? '1' : '';
+    say('');
     if (refKind === 'url') form.referenceUrl.focus();
   }));
   const showReference = () => {
@@ -248,7 +266,35 @@
       form.logoLibrary.value = '';
       fill('logo', button.dataset.brandLogo, brand.name);
     }
+    // Its products and places come with it, in place of the ones of another brand.
+    elements = elements.filter((e) => !e.brand);
+    (brand.elements || []).forEach((e) => {
+      if (elements.length < MAX_ELEMENTS) elements.push({ kind: e.kind, name: e.name, cards: e.cards, brand: `${brand.id}:${e.id}`, url: `/marcas/${brand.id}/elementos/${e.id}` });
+    });
+    drawElements();
   }
+
+  // ---- 2 · products and places: added one by one, or the ones of the brand ----
+  const MAX_ELEMENTS = {{ maxElements }};
+  const KIND_LABELS = { product: 'Producto', place: 'Lugar o fondo' };
+  let elements = [];
+  const elementBox = form.querySelector('[data-elements]');
+  const addButton = elementBox.querySelector('[data-element-add]');
+  function drawElements() {
+    elementBox.querySelectorAll('.element-card').forEach((c) => c.remove());
+    elements.forEach((e, i) => {
+      const card = document.createElement('div');
+      card.className = 'element-card';
+      card.innerHTML = `<img src="${App.escape(e.url)}" alt="${App.escape(e.name)}"><div class="element-card-info"><b>${App.escape(e.name)}</b><span class="muted small">${KIND_LABELS[e.kind]}${e.cards ? ' · fondo de tarjetas' : ''}</span></div><button type="button" class="icon-btn" aria-label="Quitar ${App.escape(e.name)}">{{ ui.icon('x', 'icon-16')|e('js') }}</button>`;
+      card.querySelector('button').addEventListener('click', () => { elements.splice(i, 1); drawElements(); });
+      elementBox.insertBefore(card, addButton);
+    });
+    addButton.classList.toggle('hidden', elements.length >= MAX_ELEMENTS);
+  }
+  addButton.addEventListener('click', async () => {
+    const element = await App.elementDialog();
+    if (element) { elements.push(element); drawElements(); }
+  });
   brandButtons.forEach((b) => b.addEventListener('click', () => chooseBrand(b)));
   // An uploaded logo replaces the one of the brand.
   form.logo.addEventListener('change', () => { form.brandId.value = ''; });
@@ -304,13 +350,22 @@
     if (n === 3 && form.product.value.trim().length < 10) return 'Cuéntanos qué anuncias (10 caracteres como mínimo).';
     return '';
   }
-  const STEP_OF = { reference: 1, referenceUrl: 1, person: 2, logo: 2, product: 3 };
+  const STEP_OF = { reference: 1, referenceUrl: 1, person: 2, logo: 2, elements: 2, product: 3 };
   next.addEventListener('click', async () => {
     const issue = problem(step);
     if (issue) { say(issue); return; }
     if (step < 4) { show(step + 1); return; }
     const data = new FormData(form);
-    if (refKind === 'url') data.delete('reference'); else data.delete('referenceUrl');
+    if (refKind !== 'file') data.delete('reference');
+    if (refKind !== 'url') data.delete('referenceUrl');
+    elements.forEach((e, i) => {
+      data.append(`elements[${i}][kind]`, e.kind);
+      data.append(`elements[${i}][name]`, e.name);
+      data.append(`elements[${i}][cards]`, e.cards ? '1' : '');
+      if (e.file) data.append(`elements[${i}][file]`, e.file);
+      else if (e.library) data.append(`elements[${i}][library]`, e.library);
+      else data.append(`elements[${i}][brand]`, e.brand);
+    });
     say('Subiendo…', false);
     const result = await App.busy(next, () => App.postForm('{{ path('video_create') }}', data));
     if (!result.ok) {

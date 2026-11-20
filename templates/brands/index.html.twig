@@ -1,0 +1,36 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block title %}Mis marcas{% endblock %}
+{% block body %}
+<div class="head">
+    <h1 class="h1">Mis marcas</h1>
+    <span class="spacer"></span>
+    <a class="btn btn-primary" href="{{ path('brand_new') }}">{{ ui.icon('plus') }}Nueva marca</a>
+</div>
+<p class="muted settings-intro">El logo, los colores, la tipografía, las palabras prohibidas y los productos y lugares de cada marca. Al crear un anuncio eliges la marca y todo eso se pone solo.</p>
+
+{% if brands is empty %}
+<a class="empty" href="{{ path('brand_new') }}"><span class="empty-ic">{{ ui.icon('tag', 'icon-28') }}</span><b>Tu primera marca está a un minuto</b><span>Sube su logo, sus productos y sus lugares una vez y úsalos en todos tus anuncios.</span></a>
+{% else %}
+<div class="brand-grid">
+    {% for b in brands %}
+    <div class="brand-card">
+        <a class="brand-logo" href="{{ path('brand_edit', {id: b.id}) }}" aria-label="Editar {{ b.name }}">{% if b.logo %}<img src="{{ path('brand_logo', {id: b.id}) }}" alt="Logo de {{ b.name }}">{% else %}<span>{{ b.name|first|upper }}</span>{% endif %}</a>
+        <div class="brand-info">
+            <b>{{ b.name }}</b>
+            <span class="brand-colors">{% for c in b.colors %}<span class="swatch" style="background: {{ c }}" title="{{ c }}"></span>{% endfor %}<span class="muted small">{{ b.font }}</span></span>
+            {% if b.elements|default([]) is not empty %}
+            <span class="brand-elements">{% for e in b.elements %}<img src="{{ path('brand_element_image', {id: b.id, element: e.id}) }}" alt="{{ e.name }}" title="{{ e.name }}" loading="lazy">{% endfor %}</span>
+            {% else %}
+            <span class="muted small">Sin productos ni lugares</span>
+            {% endif %}
+        </div>
+        <div class="brand-actions">
+            <a class="btn btn-ghost btn-sm" href="{{ path('video_new', {marca: b.id}) }}">{{ ui.icon('sparkles', 'icon-16') }}Usar</a>
+            <a class="btn btn-ghost btn-sm" href="{{ path('brand_edit', {id: b.id}) }}" aria-label="Editar {{ b.name }}">{{ ui.icon('pencil', 'icon-16') }}</a>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

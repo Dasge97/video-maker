@@ -1,0 +1,56 @@
+{#
+   La ventana de «Añadir elemento»: un producto o un lugar con su nombre y su imagen. La imagen
+   se sube, se elige de «Imágenes» o se genera con IA. La mueve App.elementDialog (app.js), que
+   devuelve lo elegido a quien la abrió: «Mis marcas» o el asistente de un anuncio.
+#}
+{% import '_icons.html.twig' as ui %}
+<dialog class="dialog element-dialog" data-element-dialog data-list-url="{{ path('image_list') }}" data-create-url="{{ path('image_create') }}">
+    <form class="dialog-body" method="dialog" novalidate>
+        <h2>Añadir elemento</h2>
+        <p class="muted small" style="margin-top: -6px">Lo que tiene que salir tal como es en el vídeo: tu producto, tu tienda, un fondo concreto.</p>
+
+        <div class="tgs" role="radiogroup" aria-label="Qué es">
+            <button type="button" class="tg" role="radio" aria-checked="true" data-el-kind="product">{{ ui.icon('tag', 'icon-16') }}Producto</button>
+            <button type="button" class="tg" role="radio" aria-checked="false" data-el-kind="place">{{ ui.icon('image', 'icon-16') }}Lugar o fondo</button>
+        </div>
+
+        <div>
+            <label class="label" for="element-name">Nombre</label>
+            <input class="input" id="element-name" maxlength="60" data-el-name placeholder="Botella Brisa">
+            <p class="muted small" style="margin-top: 6px">Corto: el agente lo usa para decir en qué planos sale.</p>
+        </div>
+
+        <div>
+            <span class="label">Imagen</span>
+            <div class="tgs" role="radiogroup" aria-label="De dónde sale la imagen">
+                <button type="button" class="tg" role="radio" aria-checked="true" data-el-source="upload">{{ ui.icon('upload', 'icon-16') }}Subir</button>
+                <button type="button" class="tg" role="radio" aria-checked="false" data-el-source="library">{{ ui.icon('library', 'icon-16') }}De «Imágenes»</button>
+                <button type="button" class="tg" role="radio" aria-checked="false" data-el-source="generate">{{ ui.icon('sparkles', 'icon-16') }}Generar con IA</button>
+            </div>
+        </div>
+
+        <div data-el-panel="upload">
+            <label class="btn btn-ghost">{{ ui.icon('upload', 'icon-16') }}<span data-el-file-name>Elegir una imagen</span><input class="sr-only" type="file" accept="image/jpeg,image/png,image/webp" data-el-file></label>
+        </div>
+        <div class="hidden" data-el-panel="library">
+            <div class="picker" data-el-grid></div>
+            <p class="muted small hidden" data-el-grid-empty>Aún no tienes imágenes en «Imágenes».</p>
+        </div>
+        <div class="hidden" data-el-panel="generate">
+            <textarea class="input" rows="3" maxlength="2000" data-el-prompt placeholder="Botella de acero azul con tapón de bambú y filtro de carbón dentro"></textarea>
+            <div style="display: flex; align-items: center; gap: 10px; margin-top: 10px">
+                <button type="button" class="btn btn-ghost btn-sm" data-el-generate><span class="spinner"></span>{{ ui.icon('sparkles', 'icon-16') }}Generar</button>
+                <span class="muted small">Unos 0,02 $. Tarda unos segundos y queda guardada en «Imágenes».</span>
+            </div>
+        </div>
+
+        <div class="element-preview hidden" data-el-preview></div>
+
+        <label class="check-row hidden" data-el-cards-row><input type="checkbox" data-el-cards> Usarlo también de fondo en las tarjetas de texto y en la del logo</label>
+        <p class="error" data-el-error></p>
+    </form>
+    <div class="dialog-actions">
+        <button type="button" class="btn btn-ghost btn-sm" data-el-cancel>Cancelar</button>
+        <button type="button" class="btn btn-primary btn-sm" data-el-ok><span class="spinner"></span>{{ ui.icon('plus', 'icon-16') }}Añadir</button>
+    </div>
+</dialog>

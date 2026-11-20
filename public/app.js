@@ -103,5 +103,88 @@ const App = (() => {
   /** Words said aloud: a figure is one word. */
   const words = (text) => (text || '').trim().split(/\s+/).filter((w) => /[\p{L}\p{N}]/u.test(w)).length;
 
-  return { toast, confirm, request, postJson, postForm, busy, firstError, poll, escape, money, words };
+  /**
+   * «Añadir elemento» (templates/_element_dialog.html.twig): asks for a product or a place with
+   * its name and its image, uploaded, chosen from «Imágenes» or generated. Resolves with
+   * { kind, name, cards, file, library, url } or null when cancelled; `file` is the upload,
+   * `library` the hash of an image of «Imágenes», `url` something to show it with.
+   */
+  function elementDialog() {
+    const dialog = document.querySelector('[data-element-dialog]');
+    const q = (s) => dialog.querySelector(s);
+    const qa = (s) => dialog.querySelectorAll(s);
+    let kind = 'product';
+    let source = 'upload';
+    let picked = { file: null, library: null, url: null };
+    const radio = (attr, value) => qa(`[${attr}]`).forEach((b) => b.setAttribute('aria-checked', String(b.getAttribute(attr) === value)));
+    const preview = () => {
+      const box = q('[data-el-preview]');
+      box.classList.toggle('hidden', !picked.url);
+      box.style.backgroundImage = picked.url ? `url("${picked.url}")` : '';
+    };
+    const setKind = (k) => { kind = k; radio('data-el-kind', k); q('[data-el-cards-row]').classList.toggle('hidden', k !== 'place'); };
+    const setSource = async (s) => {
+      source = s;
+      radio('data-el-source', s);
+      qa('[data-el-panel]').forEach((p) => p.classList.toggle('hidden', p.dataset.elPanel !== s));
+      if (s === 'library') {
+        const result = await request(dialog.dataset.listUrl);
+        const images = (result.ok ? result.data : []).filter((i) => i.kind !== 'logo');
+        q('[data-el-grid]').innerHTML = images.map((i) => `<button type="button" data-hash="${i.hash}" data-url="${i.url}" title="${escape(i.prompt)}"><img src="${i.url}" alt="${escape(i.prompt)}" loading="lazy"></button>`).join('');
+        q('[data-el-grid-empty]').classList.toggle('hidden', images.length > 0);
+      }
+    };
+    // Every opening starts clean.
+    setKind('product');
+    setSource('upload');
+    q('[data-el-name]').value = '';
+    q('[data-el-prompt]').value = '';
+    q('[data-el-file]').value = '';
+    q('[data-el-file-name]').textContent = 'Elegir una imagen';
+    q('[data-el-cards]').checked = false;
+    q('[data-el-error]').textContent = '';
+    preview();
+
+    return new Promise((resolve) => {
+      qa('[data-el-kind]').forEach((b) => { b.onclick = () => setKind(b.dataset.elKind); });
+      qa('[data-el-source]').forEach((b) => { b.onclick = () => setSource(b.dataset.elSource); });
+      q('[data-el-file]').onchange = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        picked = { file, library: null, url: URL.createObjectURL(file) };
+        q('[data-el-file-name]').textContent = file.name;
+        preview();
+      };
+      q('[data-el-grid]').onclick = (e) => {
+        const b = e.target.closest('[data-hash]');
+        if (!b) return;
+        picked = { file: null, library: b.dataset.hash, url: b.dataset.url };
+        qa('[data-el-grid] button').forEach((o) => o.classList.toggle('on', o === b));
+        preview();
+      };
+      q('[data-el-generate]').onclick = async (e) => {
+        const data = new FormData();
+        data.append('kind', kind);
+        data.append('prompt', q('[data-el-prompt]').value);
+        q('[data-el-error]').textContent = '';
+        const result = await busy(e.currentTarget, () => postForm(dialog.dataset.createUrl, data));
+        if (!result.ok) { q('[data-el-error]').textContent = firstError(result.errors); return; }
+        picked = { file: null, library: result.data.image.hash, url: result.data.image.url };
+        preview();
+      };
+      const close = (value) => { dialog.close(); resolve(value); };
+      q('[data-el-cancel]').onclick = () => close(null);
+      dialog.oncancel = () => resolve(null);
+      q('[data-el-ok]').onclick = () => {
+        const name = q('[data-el-name]').value.trim();
+        if (name.length < 2) { q('[data-el-error]').textContent = 'Ponle un nombre corto, como «Botella Brisa» o «La tienda».'; return; }
+        if (!picked.file && !picked.library) { q('[data-el-error]').textContent = 'Sube su imagen, elige una de «Imágenes» o genérala.'; return; }
+        close({ kind, name, cards: kind === 'place' && q('[data-el-cards]').checked, ...picked });
+      };
+      dialog.showModal();
+      q('[data-el-name]').focus();
+    });
+  }
+
+  return { toast, confirm, request, postJson, postForm, busy, firstError, poll, escape, money, words, elementDialog };
 })();

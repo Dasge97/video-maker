@@ -26,6 +26,13 @@ final class FullVideoTest extends KernelTestCase
     private string $media;
     /** @var list<string> */
     private array $calls = [];
+    /** The plan of the fixture without frames, as the agent gives it without a reference. */
+    private bool $withoutFrames = false;
+    /** The plan of the fixture with the product and the kitchen in piece 2. */
+    private bool $withElements = false;
+    /** @var list<array<string, mixed>> what was sent to fal for each clip */
+    private array $falBodies = [];
+    private string $agentBody = '';
 
     protected function setUp(): void
     {
@@ -106,6 +113,79 @@ final class FullVideoTest extends KernelTestCase
         $store->delete($job->id());
     }
 
+    public function testAProductAndAPlaceGoToTheClipsAndTheCards(): void
+    {
+        self::bootKernel();
+        $container = static::getContainer();
+        $this->withElements = true;
+        $container->set('http_client', new MockHttpClient($this->provider(...)));
+        /** @var JobStore $store */
+        $store = $container->get(JobStore::class);
+        /** @var WorkerCommand $worker */
+        $worker = $container->get(WorkerCommand::class);
+        $account = $this->account();
+        $fixture = json_decode((string) file_get_contents(\dirname(__DIR__).'/fixtures/talking_person/job.json'), true);
+        $job = $store->create(['referenceUrl' => null, 'referenceFile' => 'input/reference-upload.mp4', 'personFile' => 'input/person-upload.jpg', 'logoFile' => 'input/logo-upload.png', 'elements' => [
+            ['kind' => 'product', 'name' => 'Botella Brisa', 'cards' => false, 'file' => 'input/element-1-upload.jpg'],
+            ['kind' => 'place', 'name' => 'La cocina', 'cards' => true, 'file' => 'input/element-2-upload.jpg'],
+        ]] + $fixture['input'], $account->id());
+        copy($this->media.'/reference.mp4', $job->path('input/reference-upload.mp4'));
+        copy(\dirname(__DIR__).'/fixtures/talking_person/input/person.jpg', $job->path('input/person-upload.jpg'));
+        copy(\dirname(__DIR__).'/fixtures/talking_person/input/logo.png', $job->path('input/logo-upload.png'));
+        copy($this->media.'/image.jpg', $job->path('input/element-1-upload.jpg'));
+        copy($this->media.'/image.jpg', $job->path('input/element-2-upload.jpg'));
+        $store->save($job);
+
+        $job = $this->work($store, $worker, $job->id());
+        self::assertSame('proposal', $job->status(), (string) json_encode($job->data['error']));
+        // The agent saw both images and got their names.
+        self::assertStringContainsString('Producto «Botella Brisa»', $this->agentBody);
+        self::assertStringContainsString('Lugar «La cocina»', $this->agentBody);
+
+        $store->locked($job->id(), static fn (Job $j) => $j->start('generating'));
+        $job = $store->get($job->id()) ?? $job;
+        for ($round = 0; $round < 10 && 'generating' === $job->status(); ++$round) {
+            $store->locked($job->id(), static function (Job $j): void { $j->data['clipsPolledAt'] = 0; });
+            $job = $this->work($store, $worker, $job->id());
+        }
+        self::assertSame('ready', $job->status(), (string) json_encode($job->data['error']));
+        // The clip of piece 2 took the person and the product as elements and the kitchen as image.
+        $clip = array_values(array_filter($this->falBodies, static fn (array $b) => isset($b['elements'])))[0] ?? [];
+        self::assertCount(2, $clip['elements'] ?? []);
+        self::assertCount(1, $clip['image_urls'] ?? []);
+        self::assertStringContainsString('@Element2 is the product «Botella Brisa»', (string) ($clip['prompt'] ?? ''));
+        // The kitchen is the background of the logo card: nothing generated for it.
+        self::assertSame('input/element-2.jpg', $job->data['outputs']['images'][4]['background']);
+        $store->delete($job->id());
+    }
+
+    public function testWithoutAReferenceTheAgentProposesItsOwnStructure(): void
+    {
+        self::bootKernel();
+        $container = static::getContainer();
+        $this->withoutFrames = true;
+        $container->set('http_client', new MockHttpClient($this->provider(...)));
+        /** @var JobStore $store */
+        $store = $container->get(JobStore::class);
+        /** @var WorkerCommand $worker */
+        $worker = $container->get(WorkerCommand::class);
+        $account = $this->account();
+        $fixture = json_decode((string) file_get_contents(\dirname(__DIR__).'/fixtures/talking_person/job.json'), true);
+        $job = $store->create(['referenceUrl' => null, 'referenceFile' => null, 'noReference' => true, 'personFile' => 'input/person-upload.jpg', 'logoFile' => 'input/logo-upload.png'] + $fixture['input'], $account->id());
+        copy(\dirname(__DIR__).'/fixtures/talking_person/input/person.jpg', $job->path('input/person-upload.jpg'));
+        copy(\dirname(__DIR__).'/fixtures/talking_person/input/logo.png', $job->path('input/logo-upload.png'));
+        $store->save($job);
+
+        $job = $this->work($store, $worker, $job->id());
+        self::assertSame('proposal', $job->status(), (string) json_encode($job->data['error']));
+        self::assertTrue($job->data['reference']['none']);
+        self::assertSame([], json_decode((string) file_get_contents($job->path('reference/frames.json')), true));
+        // The agent was told there is no reference, and nothing was transcribed.
+        self::assertStringContainsString('\\"reference\\": null', $this->agentBody);
+        self::assertSame([], $job->data['warnings']);
+        $store->delete($job->id());
+    }
+
     public function testAVideoStopsAtTheSpendingLimitOfItsAccount(): void
     {
         self::bootKernel();
@@ -165,6 +245,20 @@ final class FullVideoTest extends KernelTestCase
         $json = static fn (array $data) => new MockResponse((string) json_encode($data), ['response_headers' => ['content-type' => 'application/json']]);
         if (str_contains($url, 'api.anthropic.com')) {
             $plan = json_decode((string) file_get_contents(\dirname(__DIR__).'/fixtures/talking_person/plan.json'), true);
+            $this->agentBody = (string) ($options['body'] ?? '');
+            if ($this->withElements) {
+                $plan['pieces'][1]['scene']['elements'] = ['Botella Brisa', 'La cocina'];
+            }
+            if ($this->withoutFrames) {
+                foreach ($plan['reference']['beats'] as $b => $beat) {
+                    $plan['reference']['beats'][$b]['frame'] = null;
+                }
+                foreach ($plan['pieces'] as $p => $piece) {
+                    if (\is_array($piece['scene'] ?? null)) {
+                        $plan['pieces'][$p]['scene']['imitateFrame'] = null;
+                    }
+                }
+            }
 
             return $json([
                 'id' => 'msg_test', 'type' => 'message', 'role' => 'assistant', 'model' => 'claude-opus-5-5',
@@ -190,6 +284,7 @@ final class FullVideoTest extends KernelTestCase
             return $json(['data' => [['b64_json' => base64_encode((string) file_get_contents($this->media.'/image.jpg'))]], 'usage' => ['input_tokens' => 100, 'output_tokens' => 1000]]);
         }
         if ('POST' === $method && str_starts_with($url, 'https://queue.fal.run/')) {
+            $this->falBodies[] = (array) json_decode((string) ($options['body'] ?? '{}'), true);
             $id = 'req-'.\count($this->calls);
 
             return $json(['request_id' => $id, 'status_url' => 'https://queue.fal.run/fal-ai/x/requests/'.$id.'/status', 'response_url' => 'https://queue.fal.run/fal-ai/x/requests/'.$id, 'cancel_url' => 'https://queue.fal.run/fal-ai/x/requests/'.$id.'/cancel']);

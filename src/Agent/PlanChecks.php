@@ -80,6 +80,7 @@ final class PlanChecks
             + self::readability($plan, $pieces)
             + self::written($pieces)
             + self::frames($plan, (int) $data['frames'])
+            + self::elements($pieces, $data['elements'] ?? [])
             + self::cost($pieces, (int) ($data['maxPaidClips'] ?? self::DEFAULT_MAX_PAID_CLIPS))
             + self::onlyWhatIsGiven($plan, $data);
     }
@@ -408,6 +409,31 @@ final class PlanChecks
         foreach ($plan['pieces'] ?? [] as $j => $piece) {
             if ($bad($piece['scene']['imitateFrame'] ?? null)) {
                 $errors["pieces/$j/scene/imitateFrame"] = \sprintf('La pieza %d imita el fotograma %d, que no existe: van del 0 al %d.', $j + 1, $piece['scene']['imitateFrame'], $frames - 1);
+            }
+        }
+
+        return $errors;
+    }
+
+    /**
+     * The products and places a piece names are the ones given, with their exact name: the
+     * clip asks for their image by it.
+     *
+     * @param list<array<string, mixed>> $pieces
+     * @param list<string>               $names
+     *
+     * @return array<string, string>
+     */
+    public static function elements(array $pieces, array $names): array
+    {
+        $errors = [];
+        foreach ($pieces as $j => $piece) {
+            foreach ($piece['scene']['elements'] ?? [] as $e => $name) {
+                if (!\in_array($name, $names, true)) {
+                    $errors["pieces/$j/scene/elements/$e"] = [] === $names
+                        ? \sprintf('La pieza %d nombra «%s», pero no hay productos ni lugares: deja `elements` vacío.', $j + 1, $name)
+                        : \sprintf('La pieza %d nombra «%s», que no está entre los productos y lugares: usa uno de estos, tal cual: %s.', $j + 1, $name, implode(', ', array_map(static fn ($n) => '«'.$n.'»', $names)));
+                }
             }
         }
 

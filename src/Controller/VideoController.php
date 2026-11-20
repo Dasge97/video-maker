@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Account\Account;
 use App\Account\Brands;
 use App\Account\CurrentAccount;
 use App\Account\Spending;
@@ -35,6 +36,8 @@ use Symfony\Component\Routing\Attribute\Route;
 final class VideoController extends AbstractController
 {
     public const DURATIONS = [10, 15, 20, 30];
+    /** Productos y lugares de un vídeo: con la persona, lo que cabe en un clip de Kling O3 (4 imágenes). */
+    public const MAX_ELEMENTS = 2;
     /** About what the agent costs to prepare or change a proposal, for the spending limit. */
     private const PROPOSAL_USD = 0.15;
     private const VIDEO_TYPES = ['mp4', 'mov', 'webm'];
@@ -113,6 +116,7 @@ final class VideoController extends AbstractController
             'library' => $this->library->all(),
             'brands' => $this->current->require()->brands(),
             'missing' => $this->current->missingKeys(),
+            'maxElements' => self::MAX_ELEMENTS,
         ]);
     }
 
@@ -133,7 +137,11 @@ final class VideoController extends AbstractController
         $url = trim($this->text($form->getString('referenceUrl')));
         /** @var UploadedFile|null $reference */
         $reference = $request->files->get('reference');
-        if (null === $reference && '' === $url) {
+        // «Sin referencia»: el agente propone la estructura él solo.
+        $noReference = $form->getBoolean('noReference') && null === $reference && '' === $url;
+        if ($noReference) {
+            // Nothing to check.
+        } elseif (null === $reference && '' === $url) {
             $errors['reference'] = 'Sube el vídeo de referencia o pega su enlace.';
         } elseif (null !== $reference && !$this->acceptable($reference, self::VIDEO_TYPES, 200)) {
             $errors['reference'] = 'El vídeo debe ser mp4, mov o webm y ocupar como mucho 200 MB.';
@@ -158,6 +166,7 @@ final class VideoController extends AbstractController
         if (1 !== preg_match('/^[A-Za-z0-9]{8,40}$/', $voice)) {
             $errors['voiceId'] = 'Elige una voz.';
         }
+        $elements = $this->elements($request, $account, $errors);
         if ([] !== $errors) {
             return new JsonResponse(['errors' => $errors], 422);
         }
@@ -180,7 +189,8 @@ final class VideoController extends AbstractController
                 'forbiddenWords' => $forbidden,
             ],
             'referenceFile' => null,
-            'referenceUrl' => null === $reference ? $url : null,
+            'referenceUrl' => null === $reference && '' !== $url ? $url : null,
+            'noReference' => $noReference,
             'personFile' => null,
             'logoFile' => null,
         ], $account->id());
@@ -191,6 +201,10 @@ final class VideoController extends AbstractController
         }
         $job->data['input']['personFile'] = $this->keep($job, $person, 'person-upload');
         $job->data['input']['logoFile'] = null === $logo ? null : $this->keep($job, $logo, 'logo-upload');
+        $job->data['input']['elements'] = [];
+        foreach ($elements as $n => $element) {
+            $job->data['input']['elements'][] = ['kind' => $element['kind'], 'name' => $element['name'], 'cards' => $element['cards'], 'file' => $this->keep($job, $element['image'], 'element-'.($n + 1).'-upload')];
+        }
         $this->store->save($job);
         $job->log('Vídeo creado desde la web');
         if ('' !== $brandName && $form->getBoolean('saveBrand')) {
@@ -470,6 +484,49 @@ final class VideoController extends AbstractController
         }
 
         return null;
+    }
+
+    /**
+     * Los productos y lugares del vídeo: cada uno con su imagen subida, una de «Imágenes» o uno
+     * guardado en una marca («brand» = id de la marca:id del elemento).
+     *
+     * @param array<string, string> $errors
+     *
+     * @return list<array{kind: string, name: string, cards: bool, image: UploadedFile|string}>
+     */
+    private function elements(Request $request, Account $account, array &$errors): array
+    {
+        $fields = $request->request->all()['elements'] ?? [];
+        $files = $request->files->all()['elements'] ?? [];
+        $out = [];
+        $names = [];
+        foreach (\is_array($fields) ? array_slice($fields, 0, self::MAX_ELEMENTS, true) : [] as $i => $field) {
+            $kind = (string) ($field['kind'] ?? '');
+            $name = mb_substr(trim($this->text((string) ($field['name'] ?? ''))), 0, 60);
+            if (!isset(Brands::ELEMENT_KINDS[$kind]) || mb_strlen($name) < 2 || isset($names[mb_strtolower($name)])) {
+                $errors['elements'] = 'Cada producto o lugar necesita un nombre distinto de al menos 2 letras.';
+
+                return [];
+            }
+            $names[mb_strtolower($name)] = true;
+            $file = $files[$i]['file'] ?? null;
+            $image = null;
+            if ($file instanceof UploadedFile) {
+                $image = $this->acceptable($file, self::IMAGE_TYPES, 20) ? $file : null;
+            } elseif (null !== ($entry = $this->library->get((string) ($field['library'] ?? '')))) {
+                $image = $this->library->path($entry);
+            } elseif (2 === \count($ids = explode(':', (string) ($field['brand'] ?? '')))) {
+                $image = $this->brands->element($account, $ids[0], $ids[1])['path'] ?? null;
+            }
+            if (null === $image) {
+                $errors['elements'] = \sprintf('No se ha podido leer la imagen de «%s»: debe ser JPEG, PNG o WebP de 20 MB como mucho.', $name);
+
+                return [];
+            }
+            $out[] = ['kind' => $kind, 'name' => $name, 'cards' => 'place' === $kind && filter_var($field['cards'] ?? false, \FILTER_VALIDATE_BOOL), 'image' => $image];
+        }
+
+        return $out;
     }
 
     private function keep(Job $job, UploadedFile|string $image, string $name): string

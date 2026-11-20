@@ -19,6 +19,15 @@ final class PlanChecksTest extends TestCase
         self::assertSame([], PlanChecks::errors(self::plan(), self::data()));
     }
 
+    public function testAPieceOnlyNamesTheProductsAndPlacesGiven(): void
+    {
+        $pieces = [['kind' => 'generated_clip', 'scene' => ['elements' => ['Botella Brisa']]], ['kind' => 'generated_clip', 'scene' => ['elements' => ['Botella azul']]]];
+        $errors = PlanChecks::elements($pieces, ['Botella Brisa']);
+        self::assertSame(['pieces/1/scene/elements/0'], array_keys($errors));
+        self::assertStringContainsString('«Botella Brisa»', $errors['pieces/1/scene/elements/0']);
+        self::assertArrayHasKey('pieces/0/scene/elements/0', PlanChecks::elements($pieces, []));
+    }
+
     public function testTheSchemaRejectsAFieldThatDoesNotExist(): void
     {
         $plan = self::plan();

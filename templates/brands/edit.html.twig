@@ -1,0 +1,116 @@
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block title %}{{ brand ? brand.name : 'Nueva marca' }}{% endblock %}
+{% block body %}
+<div class="head">
+    <a class="icon-btn" href="{{ path('brand_index') }}" aria-label="Volver a Mis marcas">{{ ui.icon('back') }}</a>
+    <h1 class="h1">{{ brand ? brand.name : 'Nueva marca' }}</h1>
+</div>
+
+<div class="brand-edit">
+    <form class="key-card" data-brand-form novalidate>
+        <input type="hidden" name="id" value="{{ brand.id ?? '' }}">
+        <span class="section-label" style="margin-top: 0">La marca</span>
+        <div class="brand-edit-logo">
+            <label class="brand-logo big" title="Cambiar el logo">
+                {% if brand and brand.logo %}<img src="{{ path('brand_logo', {id: brand.id}) }}" alt="Logo de {{ brand.name }}" data-logo-img>{% else %}<span data-logo-img>{{ ui.icon('upload') }}</span>{% endif %}
+                <input class="sr-only" type="file" name="logo" accept="image/jpeg,image/png,image/webp" data-logo-input>
+            </label>
+            <div style="flex: 1">
+                <label class="label" for="name">Nombre</label>
+                <input class="input" id="name" name="name" maxlength="80" value="{{ brand.name ?? '' }}" placeholder="Nombre de la marca">
+                <p class="error" data-error-for="name"></p>
+                <p class="error" data-error-for="logo"></p>
+            </div>
+        </div>
+        <div class="field-row">
+            <div><span class="label">Colores</span><div class="color-pair"><input type="color" name="color1" value="{{ brand.colors[0] ?? '#6d4aff' }}" aria-label="Color principal" data-color><input type="color" name="color2" value="{{ brand.colors[1] ?? '#ffffff' }}" aria-label="Color secundario" data-color><span class="muted small" style="align-self: center" data-colors-help>{{ brand ? '' : 'Salen del logo' }}</span></div></div>
+            <div><label class="label" for="font">Tipografía</label><select class="select" id="font" name="font">{% for font in fonts %}<option {{ font == (brand.font ?? 'Poppins') ? 'selected' }}>{{ font }}</option>{% endfor %}</select></div>
+            <div><label class="label" for="forbiddenWords">Palabras prohibidas</label><input class="input" id="forbiddenWords" name="forbiddenWords" value="{{ (brand.forbiddenWords ?? [])|join(', ') }}" placeholder="barato, oferta"></div>
+        </div>
+        <div class="settings-actions">
+            {% if brand %}<button type="button" class="btn btn-ghost btn-sm" data-post="{{ path('brand_delete', {id: brand.id}) }}" data-confirm-title="¿Borrar la marca {{ brand.name }}?" data-confirm-text="Se borran su logo, sus productos y sus lugares. Los vídeos ya hechos no cambian." data-confirm-ok="Borrar" data-danger><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}Borrar la marca</button>{% endif %}
+            <span class="spacer"></span>
+            <button type="submit" class="btn btn-primary" data-submit><span class="spinner"></span>{{ ui.icon('check') }}{{ brand ? 'Guardar cambios' : 'Crear la marca' }}</button>
+        </div>
+    </form>
+
+    <section class="key-card">
+        <span class="section-label" style="margin-top: 0">Productos y lugares</span>
+        <p class="muted small">Lo que tiene que salir tal como es en los anuncios: el producto, la tienda, un fondo. El agente decide en qué planos sale cada uno.</p>
+        {% if brand %}
+        <div class="element-grid">
+            {% for e in brand.elements|default([]) %}
+            <div class="element-card">
+                <img src="{{ path('brand_element_image', {id: brand.id, element: e.id}) }}" alt="{{ e.name }}">
+                <div class="element-card-info"><b>{{ e.name }}</b><span class="muted small">{{ kinds[e.kind] ?? e.kind }}{{ e.cards ? ' · fondo de tarjetas' : '' }}</span></div>
+                <button type="button" class="icon-btn" aria-label="Quitar {{ e.name }}" data-post="{{ path('brand_element_delete', {id: brand.id, element: e.id}) }}" data-confirm-title="¿Quitar {{ e.name }}?" data-confirm-text="Los vídeos ya hechos no cambian." data-confirm-ok="Quitar" data-danger data-reload><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}</button>
+            </div>
+            {% endfor %}
+            {% if (brand.elements|default([]))|length < max %}
+            <button type="button" class="element-add" data-element-add>{{ ui.icon('plus') }}Añadir elemento</button>
+            {% endif %}
+        </div>
+        {% else %}
+        <p class="muted">Crea la marca y después añade sus productos y lugares.</p>
+        {% endif %}
+    </section>
+</div>
+{{ include('_element_dialog.html.twig') }}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(() => {
+  const form = document.querySelector('[data-brand-form]');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    form.querySelectorAll('[data-error-for]').forEach((el) => (el.textContent = ''));
+    const result = await App.busy(form.querySelector('[data-submit]'), () => App.postForm('{{ path('brand_save') }}', form));
+    if (!result.ok) {
+      Object.entries(result.errors).forEach(([field, message]) => {
+        const el = form.querySelector(`[data-error-for="${field}"]`);
+        if (el) el.textContent = message; else App.toast(message, 'danger');
+      });
+      return;
+    }
+    App.toast('Marca guardada', 'success');
+    setTimeout(() => (location.href = result.data.url), 500);
+  });
+
+  // A new logo: shown at once, and its colours proposed as the colours of the brand.
+  const logoInput = form.querySelector('[data-logo-input]');
+  logoInput.addEventListener('change', async () => {
+    const file = logoInput.files[0];
+    if (!file) return;
+    const img = document.createElement('img');
+    img.src = URL.createObjectURL(file);
+    img.alt = 'Logo nuevo';
+    img.dataset.logoImg = '';
+    form.querySelector('[data-logo-img]').replaceWith(img);
+    const data = new FormData();
+    data.append('logo', file);
+    const result = await App.postForm('{{ path('logo_colors') }}', data);
+    const colors = result.ok ? result.data.colors : [];
+    form.querySelectorAll('[data-color]').forEach((input, i) => { if (colors[i]) input.value = colors[i].toLowerCase(); });
+    form.querySelector('[data-colors-help]').textContent = colors.length ? 'Del logo' : 'Elígelos tú';
+  });
+
+  {% if brand %}
+  document.querySelector('[data-element-add]')?.addEventListener('click', async (e) => {
+    const element = await App.elementDialog();
+    if (!element) return;
+    const data = new FormData();
+    data.append('kind', element.kind);
+    data.append('name', element.name);
+    data.append('cards', element.cards ? '1' : '');
+    if (element.file) data.append('image', element.file); else data.append('imageLibrary', element.library);
+    const result = await App.busy(e.currentTarget, () => App.postForm('{{ path('brand_element_add', {id: brand.id}) }}', data));
+    if (!result.ok) { App.toast(App.firstError(result.errors), 'danger'); return; }
+    App.toast(`${element.name} añadido a la marca`, 'success');
+    setTimeout(() => location.reload(), 500);
+  });
+  {% endif %}
+})();
+</script>
+{% endblock %}

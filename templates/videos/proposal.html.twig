@@ -92,6 +92,7 @@
                             <span class="lbl">{{ ui.icon('eye', 'icon-16') }}Se ve</span>
                             <div>
                                 <p class="view-only">{{ piece.scene.action }}</p>
+                                {% if piece.scene.elements ?? [] is not empty %}<p class="chips" style="margin-top: 6px">{% for name in piece.scene.elements %}<span class="chip">{{ ui.icon('tag', 'icon-16') }}{{ name }}</span>{% endfor %}</p>{% endif %}
                                 <div class="edit-only"><textarea rows="2" maxlength="800" data-path="pieces.{{ i }}.scene.action">{{ piece.scene.action }}</textarea></div>
                                 <p class="error" data-error-for="pieces.{{ i }}.scene.action"></p>
                             </div>
@@ -148,7 +149,7 @@
         </details>
 
         <details class="panel">
-            <summary>{{ ui.icon('film') }}Lo que tomamos de la referencia<span class="chev">{{ ui.icon('chev') }}</span></summary>
+            <summary>{{ ui.icon('film') }}{{ job.data.reference.none ?? false ? 'La estructura que propone el agente' : 'Lo que tomamos de la referencia' }}<span class="chev">{{ ui.icon('chev') }}</span></summary>
             <div class="panel-body">
                 <p>{{ plan.reference.summary }}</p>
                 <p class="muted small">{{ plan.reference.rhythm }}</p>

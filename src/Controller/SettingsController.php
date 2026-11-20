@@ -6,13 +6,11 @@ namespace App\Controller;
 
 use App\Account\Account;
 use App\Account\AccountStore;
-use App\Account\Brands;
 use App\Account\CurrentAccount;
 use App\Account\KeyCheck;
 use App\Account\KeyCipher;
 use App\Account\Spending;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -21,11 +19,11 @@ use Symfony\Component\Routing\Attribute\Route;
 
 /**
  * «Ajustes» of the account: its provider keys (encrypted, never shown again whole), its monthly
- * spending and limit, its saved brands and its password.
+ * spending and limit, and its password. The brands are in «Mis marcas» (BrandController).
  */
 final class SettingsController extends AbstractController
 {
-    public const SECTIONS = ['claves' => 'Claves', 'gasto' => 'Gasto', 'marcas' => 'Marcas', 'cuenta' => 'Cuenta'];
+    public const SECTIONS = ['claves' => 'Claves', 'gasto' => 'Gasto', 'cuenta' => 'Cuenta'];
 
     public function __construct(
         private readonly CurrentAccount $current,
@@ -33,11 +31,10 @@ final class SettingsController extends AbstractController
         private readonly KeyCipher $cipher,
         private readonly KeyCheck $check,
         private readonly Spending $spending,
-        private readonly Brands $brands,
     ) {
     }
 
-    #[Route('/ajustes/{seccion}', name: 'settings', requirements: ['seccion' => 'claves|gasto|marcas|cuenta'], defaults: ['seccion' => 'claves'], methods: ['GET'])]
+    #[Route('/ajustes/{seccion}', name: 'settings', requirements: ['seccion' => 'claves|gasto|cuenta'], defaults: ['seccion' => 'claves'], methods: ['GET'])]
     public function index(string $seccion): Response
     {
         $account = $this->current->require();
@@ -130,18 +127,11 @@ final class SettingsController extends AbstractController
         return new JsonResponse(['ok' => true]);
     }
 
-    #[Route('/ajustes/marcas/{id}/borrar', name: 'settings_brand_delete', requirements: ['id' => '[0-9a-z]{26}'], methods: ['POST'])]
-    public function deleteBrand(string $id): JsonResponse
+    /** Las marcas tienen ya su propia pantalla en el menú de arriba. */
+    #[Route('/ajustes/marcas', name: 'settings_brands_moved', methods: ['GET'], priority: 10)]
+    public function brandsMoved(): Response
     {
-        return $this->brands->delete($this->fresh(), $id) ? new JsonResponse(['ok' => true]) : new JsonResponse(['errors' => ['' => 'Esa marca ya no existe.']], 404);
-    }
-
-    #[Route('/marcas/{id}/logo', name: 'brand_logo', requirements: ['id' => '[0-9a-z]{26}'], methods: ['GET'])]
-    public function brandLogo(string $id): Response
-    {
-        $file = $this->brands->logo($this->current->require(), $id) ?? throw $this->createNotFoundException();
-
-        return new BinaryFileResponse($file);
+        return $this->redirectToRoute('brand_index', [], Response::HTTP_MOVED_PERMANENTLY);
     }
 
     #[Route('/ajustes/contrasena', name: 'settings_password', methods: ['POST'])]

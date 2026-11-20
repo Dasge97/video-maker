@@ -174,6 +174,7 @@ final class ClipsStep implements Step
         $model = $this->videos->get($job->input()['model'] ?? null);
         $fonts = [(string) ($job->input()['brand']['font'] ?? '')];
         $person = $job->path('input/person.jpg');
+        $elements = ImagesStep::elementsByName($job->input());
         $wanted = [];
         foreach (array_values($plan['pieces']) as $i => $piece) {
             $scene = $piece['scene'] ?? null;
@@ -202,9 +203,22 @@ final class ClipsStep implements Step
                     // 2026-10-25): her photo keeps the face when the clip moves away from it.
                     $references[] = ['role' => 'element', 'path' => $person, 'mime' => 'image/jpeg', 'name' => 'the person', 'citation' => '@Element1'];
                 }
+                // Products as elements, like the person: the clip shows that product and no other.
+                // Places as images whose setting is imitated. Cited in the order fal numbers them.
+                $elementCount = \count(array_filter($references, static fn (array $r) => 'element' === $r['role']));
+                $imageCount = 0;
+                foreach ($scene['elements'] ?? [] as $name) {
+                    $element = $elements[$name] ?? null;
+                    if (null === $element || \count($references) >= self::MAX_IMAGES) {
+                        continue;
+                    }
+                    $references[] = 'place' === $element['kind']
+                        ? ['role' => 'reference', 'path' => $job->path((string) $element['path']), 'mime' => 'image/jpeg', 'name' => \sprintf('the place «%s»', $element['name']), 'citation' => '@Image'.(++$imageCount), 'imitate' => ['setting']]
+                        : ['role' => 'element', 'path' => $job->path((string) $element['path']), 'mime' => 'image/jpeg', 'name' => \sprintf('the product «%s», exactly as in its image', $element['name']), 'citation' => '@Element'.(++$elementCount)];
+                }
                 $frame = $scene['imitateFrame'] ?? null;
                 if (null !== $frame && isset($frames[$frame]) && \count($references) < self::MAX_IMAGES) {
-                    $references[] = ['role' => 'reference', 'path' => $job->path('reference/'.$frames[$frame]['path']), 'mime' => 'image/jpeg', 'name' => 'reference', 'citation' => '@Image1', 'imitate' => ['movement', 'framing']];
+                    $references[] = ['role' => 'reference', 'path' => $job->path('reference/'.$frames[$frame]['path']), 'mime' => 'image/jpeg', 'name' => 'reference', 'citation' => '@Image'.($imageCount + 1), 'imitate' => ['movement', 'framing']];
                 }
                 $prompt = $this->prompts->clipPrompt(['spec' => ['action' => $scene['action'], 'framing' => $scene['framing'], 'cameraMovement' => $scene['camera'], 'lighting' => $scene['lighting']]], $references, '', $fonts);
                 $hash = substr(hash('sha256', implode('|', array_merge(['clip', $model['video']['endpoint'], $prompt, (string) $billed], array_map(static fn (array $r) => $r['role'].':'.hash_file('sha256', $r['path']), $references)))), 0, 24);

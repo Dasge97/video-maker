@@ -101,10 +101,13 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .brand { display: flex; align-items: center; gap: 10px; font-weight: 800; font-size: 17px; letter-spacing: -0.02em; color: var(--text); }
 .brand:hover { text-decoration: none; }
 .brand-mark { width: 34px; height: 34px; border-radius: 11px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
-.top-tabs { display: flex; gap: 4px; }
-.top-tab { display: inline-flex; align-items: center; gap: 8px; height: 42px; padding: 0 14px; border-radius: 12px; color: var(--muted); font-weight: 700; }
-.top-tab:hover { color: var(--text); background: var(--surface-2); text-decoration: none; }
-.top-tab[aria-current='page'] { color: var(--text); background: var(--surface); box-shadow: var(--shadow); }
+.top-tabs { display: flex; gap: 4px; align-self: stretch; }
+/* The active one: bold, its icon in the accent and a gradient line under it, intense in the centre. */
+.top-tab { display: inline-flex; align-items: center; gap: 8px; height: 100%; padding: 0 16px; color: var(--muted); font-weight: 700; transition: color 0.15s ease-out; }
+.top-tab:hover { color: var(--text); text-decoration: none; }
+.top-tab:focus-visible { outline: 2px solid var(--accent); outline-offset: -6px; border-radius: 10px; }
+.top-tab[aria-current='page'] { color: var(--text); font-weight: 800; background: linear-gradient(90deg, transparent, var(--accent) 50%, transparent) bottom / 100% 2px no-repeat; }
+.top-tab[aria-current='page'] svg { color: var(--accent); }
 
 /* ---------- Page ---------- */
 .page { max-width: var(--page-w); margin: 0 auto; padding: 32px 32px 140px; animation: in 0.25s ease; }
@@ -459,3 +462,29 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .auth-card { padding: 24px 18px; }
   .key-card { padding: 16px; }
 }
+
+/* ---- Mis marcas: la ficha de una marca y sus elementos ---- */
+.brand-edit { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 20px; }
+.brand-edit-logo { display: flex; gap: 16px; align-items: flex-start; }
+.brand-logo.big { width: 96px; height: 96px; border-radius: 20px; cursor: pointer; color: var(--muted); flex: none; }
+.brand-logo.big:hover { outline: 2px solid var(--accent); }
+.brand-elements { display: flex; gap: 6px; margin-top: 2px; }
+.brand-elements img { width: 34px; height: 34px; border-radius: 9px; object-fit: cover; background: var(--surface-2); }
+.element-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; margin-top: 12px; }
+.element-card { position: relative; display: flex; flex-direction: column; border-radius: 16px; background: var(--surface-2); overflow: hidden; }
+.element-card img { width: 100%; aspect-ratio: 4 / 3; object-fit: cover; }
+.element-card-info { display: flex; flex-direction: column; gap: 2px; padding: 8px 10px 10px; }
+.element-card .icon-btn { position: absolute; top: 6px; right: 6px; background: rgb(255 255 255 / 92%); color: #16151d; }
+.element-add { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; min-height: 150px; border: 2px dashed var(--line); border-radius: 16px; background: transparent; color: var(--muted); font-weight: 700; cursor: pointer; }
+.element-add:hover { border-color: var(--accent); color: var(--accent); }
+.element-dialog { width: min(600px, calc(100vw - 32px)); }
+.element-preview { aspect-ratio: 4 / 3; max-height: 220px; border-radius: 14px; background: var(--surface-2) center / contain no-repeat; }
+.picker button.on { outline: 3px solid var(--accent); outline-offset: -3px; }
+@media (max-width: 860px) { .brand-edit { grid-template-columns: 1fr; } }
+
+/* ---- Paso 2: persona, logo y productos y lugares en una sola fila ---- */
+.slots-row { display: flex; flex-wrap: wrap; gap: 20px; align-items: stretch; }
+.slots-elements { flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; padding: 14px; border-radius: 22px; background: var(--surface); box-shadow: var(--shadow); }
+.slots-elements .slot-head .opt { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); }
+.slots-elements .element-grid { flex: 1; margin-top: 0; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+.slots-elements .element-add { min-height: 0; height: 100%; }

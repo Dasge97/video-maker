@@ -56,6 +56,19 @@ final class OpenAiImages
     }
 
     /**
+     * An image made from several: the person and the products or places that must look as they
+     * are. The prompt says which image is which, in the order given.
+     *
+     * @param list<string> $imagePaths
+     *
+     * @return array{bytes: string, usd: float, extension: string}
+     */
+    public function editMany(string $prompt, string $size, array $imagePaths): array
+    {
+        return $this->call($prompt, $size, array_values($imagePaths), false);
+    }
+
+    /**
      * @param list<string> $images
      *
      * @return array{bytes: string, usd: float, extension: string}

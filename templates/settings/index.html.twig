@@ -83,31 +83,6 @@
     {% endif %}
 </div>
 
-{% elseif section == 'marcas' %}
-<div class="settings wide">
-    <p class="muted settings-intro">Tus marcas guardadas: logo, colores, tipografía y palabras prohibidas. Elígelas al crear un anuncio y no tendrás que repetirlas.</p>
-    {% if account.brands is empty %}
-    <a class="empty" href="{{ path('video_new') }}"><span class="empty-ic">{{ ui.icon('tag', 'icon-28') }}</span><b>Aún no has guardado ninguna marca</b><span>Al crear un anuncio, marca «Guardar la marca para otros vídeos».</span></a>
-    {% else %}
-    <div class="brand-grid">
-        {% for b in account.brands %}
-        <div class="brand-card">
-            <div class="brand-logo">{% if b.logo %}<img src="{{ path('brand_logo', {id: b.id}) }}" alt="Logo de {{ b.name }}">{% else %}<span>{{ b.name|first|upper }}</span>{% endif %}</div>
-            <div class="brand-info">
-                <b>{{ b.name }}</b>
-                <span class="brand-colors">{% for c in b.colors %}<span class="swatch" style="background: {{ c }}" title="{{ c }}"></span>{% endfor %}<span class="muted small">{{ b.font }}</span></span>
-                {% if b.forbiddenWords is not empty %}<span class="muted small">Sin: {{ b.forbiddenWords|join(', ') }}</span>{% endif %}
-            </div>
-            <div class="brand-actions">
-                <a class="btn btn-ghost btn-sm" href="{{ path('video_new', {marca: b.id}) }}">{{ ui.icon('sparkles', 'icon-16') }}Usar</a>
-                <button type="button" class="btn btn-ghost btn-sm" data-post="{{ path('settings_brand_delete', {id: b.id}) }}" data-confirm-title="¿Borrar la marca {{ b.name }}?" data-confirm-text="Los vídeos que ya la usan no cambian." data-confirm-ok="Borrar" data-danger data-reload aria-label="Borrar la marca {{ b.name }}"><span class="spinner"></span>{{ ui.icon('trash', 'icon-16') }}</button>
-            </div>
-        </div>
-        {% endfor %}
-    </div>
-    {% endif %}
-</div>
-
 {% else %}
 <div class="settings">
     <div class="key-card">

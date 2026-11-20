@@ -19,8 +19,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY docker/php/php.ini /usr/local/etc/php/conf.d/video-maker.ini
 COPY docker/php/fpm.conf /usr/local/etc/php-fpm.d/zz-video-maker.conf
 
+# XDG_CACHE_HOME: la caché de fontconfig (las fuentes de los subtítulos) donde www-data puede
+# escribir; sin ella cada ffmpeg llenaba sus errores de «Fontconfig error: No writable cache directories».
 ENV APP_ENV=prod \
-    COMPOSER_ALLOW_SUPERUSER=1
+    COMPOSER_ALLOW_SUPERUSER=1 \
+    XDG_CACHE_HOME=/tmp/cache
 
 WORKDIR /var/www/html
 COPY --from=vendor /usr/bin/composer /usr/local/bin/composer

@@ -180,6 +180,15 @@ final class MontageTest extends TestCase
         self::assertNull(FfmpegRenderer::audioFilter(null, null, 12.5, 0.35));
     }
 
+    public function testTheAudioAlwaysEndsInStereo(): void
+    {
+        // Without it, ffmpeg 5.1 (the server image) failed to mix voice and music: «Cannot select
+        // channel layout for the link between filters Parsed_aresample and format_out».
+        foreach ([[1, 2], [1, null], [null, 2]] as [$voice, $music]) {
+            self::assertStringEndsWith('aresample=44100,aformat=sample_rates=44100:channel_layouts=stereo[aout]', (string) FfmpegRenderer::audioFilter($voice, $music, 12.5, 0.35));
+        }
+    }
+
     public function testTheSmallLogoIsNotOverALogoCardNorAPlainPiece(): void
     {
         // Logo cards at 0-2 and 8-10; a text card on the colour of the brand at 6-8.

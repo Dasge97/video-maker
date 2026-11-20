@@ -77,8 +77,10 @@ final class FfmpegRenderer implements Renderer
         $fade = min(self::MUSIC_FADE, $total / 3);
         $music = null === $musicInput ? null : \sprintf('[%d:a]%s,volume=%s,afade=t=in:d=0.5,apad=whole_dur=%s,atrim=0:%s,afade=t=out:st=%s:d=%s,asetpts=PTS-STARTPTS',
             $musicInput, $format, number_format($musicVolume, 3, '.', ''), $t, $t, Ffmpeg::seconds(max(0, $total - $fade)), Ffmpeg::seconds($fade));
-        // The level of the apps (TikTok, Reels: about -14 LUFS), without clipping.
-        $loud = 'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=44100';
+        // The level of the apps (TikTok, Reels: about -14 LUFS), without clipping. It ends in stereo
+        // at 44.1 kHz again: after sidechaincompress and amix, ffmpeg 5.1 (the one of Debian 12, in
+        // the server image) could not choose the channel layout of the output and failed.
+        $loud = 'loudnorm=I=-14:TP=-1.5:LRA=11,aresample=44100,'.$format;
 
         return match (true) {
             null !== $voice && null !== $music => $voice.',asplit=2[vo][sc];'.$music.'[mu];'

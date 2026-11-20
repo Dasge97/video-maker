@@ -138,7 +138,11 @@ final class Ffmpeg
         $process->setTimeout($timeout);
         $process->run();
         if (!$process->isSuccessful()) {
-            throw new \RuntimeException('ffmpeg: '.mb_substr(trim($process->getErrorOutput()), 0, 300));
+            // The cause is at the end; the warnings of fontconfig (no cache it can write) only hide it.
+            $lines = array_filter(explode("
+", trim($process->getErrorOutput())), static fn (string $l) => !str_starts_with($l, 'Fontconfig '));
+            throw new \RuntimeException('ffmpeg: '.mb_substr(trim(implode("
+", $lines)), -500));
         }
     }
 

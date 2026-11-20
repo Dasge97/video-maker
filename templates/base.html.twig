@@ -4,7 +4,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>{% block title %}video-maker{% endblock %} · video-maker</title>
+    <title>{% block title %}Reelbakery{% endblock %} · Reelbakery</title>
     <script>
         try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
     </script>
@@ -19,7 +19,7 @@
 {% block header %}
 <header class="top">
     <div class="top-in">
-        <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>video-maker</span></a>
+        <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>Reelbakery</span></a>
         {% if app.user %}
         <nav class="top-tabs" aria-label="Secciones">
             <a class="top-tab" href="{{ path('video_new') }}" {{ route == 'video_new' ? 'aria-current="page"' }}>{{ ui.icon('sparkles') }}<span>Crear anuncio</span></a>

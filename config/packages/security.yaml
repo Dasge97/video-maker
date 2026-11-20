@@ -24,7 +24,8 @@ security:
             remember_me:
                 secret: '%kernel.secret%'
                 lifetime: 2592000
-                always_remember_me: true
+                # Only when «No cerrar sesión» is ticked on the login form.
+                remember_me_parameter: _remember_me
             logout:
                 path: logout
                 target: login

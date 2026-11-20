@@ -507,3 +507,4 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .slots-elements .slot-head .opt { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--muted); }
 .slots-elements .element-grid { flex: 1; margin-top: 0; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .slots-elements .element-add { min-height: 0; height: 100%; }
+.auth-remember { margin-top: 0; font-size: 14px; }

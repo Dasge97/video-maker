@@ -44,6 +44,22 @@ final class AccountsWebTest extends WebTestCase
         self::assertSelectorTextContains('.notice', 'faltan las claves');
     }
 
+    public function testTheSessionIsKeptOnlyWhenAsked(): void
+    {
+        foreach ([true, false] as $keep) {
+            self::ensureKernelShutdown();
+            $client = static::createClient();
+            $this->account('recuerda-'.bin2hex(random_bytes(3)).'@example.com', $email);
+            $crawler = $client->request('GET', '/entrar');
+            $form = $crawler->selectButton('Entrar')->form(['email' => $email, 'password' => 'una-contrasena-larga']);
+            if (!$keep) {
+                $form['_remember_me']->untick();
+            }
+            $client->submit($form);
+            self::assertSame($keep, null !== $client->getCookieJar()->get('REMEMBERME'), $keep ? 'Ticked: it stays logged in.' : 'Unticked: only this session.');
+        }
+    }
+
     public function testAnAccountDoesNotSeeTheVideosOfAnother(): void
     {
         $client = static::createClient();

@@ -9,7 +9,7 @@ if [ "${WARM_CACHE:-0}" = "1" ]; then
     php bin/console cache:warmup
 fi
 
-mkdir -p var/jobs var/users var/library
+mkdir -p var/jobs var/users var/library var/sessions/prod
 chown -R www-data:www-data var 2>/dev/null || true
 
 exec "$@"

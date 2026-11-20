@@ -14,6 +14,7 @@ use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\PasswordHasher\Hasher\UserPasswordHasherInterface;
 use Symfony\Component\Routing\Attribute\Route;
 use Symfony\Component\Security\Http\Authentication\AuthenticationUtils;
+use Symfony\Component\Security\Http\Authenticator\Passport\Badge\RememberMeBadge;
 
 /**
  * Logging in, and signing up when REGISTRO_ABIERTO=1. Each account pays its own videos with its
@@ -71,7 +72,9 @@ final class SecurityController extends AbstractController
                 $account = $this->accounts->create($values['email'], $values['name']);
                 $account->data['passwordHash'] = $hasher->hashPassword($account, $password);
                 $this->accounts->save($account);
-                $security->login($account, 'form_login', 'main');
+                // Remembered like «No cerrar sesión» on the login form: a new account was logged
+                // out at the first deploy and had to type a password it had just made up.
+                $security->login($account, 'form_login', 'main', [(new RememberMeBadge())->enable()]);
 
                 return $this->redirectToRoute('settings', ['seccion' => 'claves']);
             }

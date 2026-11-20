@@ -60,6 +60,17 @@ final class AccountsWebTest extends WebTestCase
         }
     }
 
+    public function testANewAccountStaysLoggedIn(): void
+    {
+        $client = static::createClient();
+        $crawler = $client->request('GET', '/registro');
+        $client->submit($crawler->selectButton('Crear cuenta')->form([
+            'name' => 'Nueva', 'email' => 'nueva-'.bin2hex(random_bytes(3)).'@example.com', 'password' => 'una-contrasena-larga',
+        ]));
+        self::assertResponseRedirects();
+        self::assertNotNull($client->getCookieJar()->get('REMEMBERME'), 'Signing up keeps the session like «No cerrar sesión».');
+    }
+
     public function testAnAccountDoesNotSeeTheVideosOfAnother(): void
     {
         $client = static::createClient();

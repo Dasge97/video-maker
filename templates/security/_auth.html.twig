@@ -1,7 +1,7 @@
 {#
    Entrar y crear cuenta: a pantalla completa, sin la barra de arriba, sobre un fondo de degradados
-   de los colores de la marca, con el formulario en una tarjeta centrada. Cada pantalla rellena
-   `auth_form`.
+   de los colores de la marca. La mascota a la izquierda (arriba en el móvil) y el formulario en
+   una tarjeta a la derecha. Cada pantalla rellena `auth_form`.
 #}
 {% extends 'base.html.twig' %}
 {% import '_icons.html.twig' as ui %}
@@ -11,10 +11,15 @@
 <main class="auth">
     <div class="auth-bg" aria-hidden="true"><span></span><span></span><span></span></div>
     <button type="button" class="icon-btn auth-theme" data-theme-toggle aria-label="Cambiar entre modo claro y oscuro">{{ ui.icon('moon') }}</button>
-    <div class="auth-wrap">
-        <a class="auth-brand" href="{{ path('login') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>Reelbakery</span></a>
-        {% block auth_form %}{% endblock %}
-        <p class="auth-foot">Anuncios verticales para Reels y TikTok a partir de un anuncio que te guste.</p>
+    <div class="auth-layout">
+        <div class="auth-hero">
+            <img src="/img/mascota.webp" width="720" height="720" alt="La mascota de Reelbakery: una barra de pan con boina de director, megáfono y portátil, sentada en una silla de rodaje">
+        </div>
+        <div class="auth-wrap">
+            <a class="auth-brand wordmark" href="{{ path('login') }}">Reel<span>bakery</span></a>
+            {% block auth_form %}{% endblock %}
+            <p class="auth-foot">Anuncios verticales para Reels y TikTok, recién hechos a partir de un anuncio que te guste.</p>
+        </div>
     </div>
 </main>
 {% endblock %}

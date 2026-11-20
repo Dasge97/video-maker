@@ -8,10 +8,12 @@
     <script>
         try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
     </script>
-    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='7' fill='%236d4aff'/%3E%3Cpath d='M9 7v10l8-5z' fill='white'/%3E%3C/svg%3E">
+    <link rel="icon" type="image/png" href="/favicon.png">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <meta name="theme-color" content="#0f766e">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,500;0,600;0,700;0,800;1,800&display=swap">
     <link rel="stylesheet" href="/app.css">
 </head>
 <body class="{% block body_class %}{% endblock %}">
@@ -19,7 +21,7 @@
 {% block header %}
 <header class="top">
     <div class="top-in">
-        <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>Reelbakery</span></a>
+        <a class="brand" href="{{ path('home') }}"><img class="brand-mark" src="/img/cabeza.png" alt="" width="40" height="40"><span class="wordmark">Reel<span>bakery</span></span></a>
         {% if app.user %}
         <nav class="top-tabs" aria-label="Secciones">
             <a class="top-tab" href="{{ path('video_new') }}" {{ route == 'video_new' ? 'aria-current="page"' }}>{{ ui.icon('sparkles') }}<span>Crear anuncio</span></a>

@@ -32,7 +32,7 @@ security:
                 max_attempts: 5
 
     access_control:
-        - { path: ^/(entrar|registro)$, roles: PUBLIC_ACCESS }
+        - { path: ^/(entrar|registro|salud)$, roles: PUBLIC_ACCESS }
         - { path: ^/, roles: ROLE_USER }
 
 when@test:

@@ -1,0 +1,47 @@
+# video-maker en codehive: nginx, php-fpm y el proceso de fondo que hace los vídeos.
+# Los secretos llegan por ../secrets.env, fuera de la copia que codehive rehace en cada despliegue,
+# así que se conservan: si APP_KEYS_SECRET cambiara, las claves guardadas de cada cuenta dejarían de
+# poder leerse. Lo escribe /home/codehive/bin/video-maker-escribir-env desde la bóveda.
+# El puerto público lo añade docker-compose.override.generated.yml.
+x-app: &app
+  build:
+    context: .
+    target: app
+  env_file:
+    - ../secrets.env
+  environment:
+    APP_ENV: prod
+  volumes:
+    - var_data:/var/www/html/var
+  restart: unless-stopped
+
+services:
+  web:
+    build:
+      context: .
+      target: web
+    depends_on:
+      - app
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1/salud"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+
+  app:
+    <<: *app
+    environment:
+      APP_ENV: prod
+      WARM_CACHE: "1"
+
+  worker:
+    <<: *app
+    command: ["worker-loop.sh"]
+    # Como php-fpm: lo que crea el worker lo tiene que poder cambiar la web, y al revés.
+    user: www-data
+    depends_on:
+      - app
+
+volumes:
+  var_data:

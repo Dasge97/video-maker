@@ -1,0 +1,15 @@
+.git
+.vscode
+# Ningún .env entra en la imagen: en el despliegue, .env lo escribe codehive para docker compose.
+# Dentro de la imagen se usa .env.image, con valores por defecto y sin secretos.
+.env
+.env.*
+!.env.image
+var/
+vendor/
+tests/
+docs/
+CLAUDE.md
+docker-compose.override.generated.yml
+deployment.config.json
+secrets.env

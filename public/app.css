@@ -106,7 +106,7 @@ button, input, select, textarea { font: inherit; color: inherit; }
 .top-in { max-width: var(--page-w); height: 100%; margin: 0 auto; padding: 0 32px; display: flex; align-items: center; gap: 22px; }
 .brand { display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: 19px; letter-spacing: -0.02em; color: var(--text); }
 .brand:hover { text-decoration: none; }
-.brand-mark { width: 40px; height: 40px; flex: none; object-fit: contain; }
+.brand-mark { width: 44px; height: 44px; flex: none; object-fit: contain; }
 /* The name as in the logo: «Reel» in the text color and «bakery» in coral, heavy italic. */
 .wordmark { font-weight: 800; font-style: italic; letter-spacing: -0.03em; color: var(--text); }
 .wordmark span { color: var(--accent-2-text); }
@@ -405,7 +405,10 @@ button, input, select, textarea { font: inherit; color: inherit; }
   .auth-layout { grid-template-columns: minmax(0, 1fr); gap: 8px; justify-items: center; }
   .auth-hero img { max-width: 200px; }
 }
-.auth-brand { font-size: 30px; line-height: 1.1; }
+.auth-brand { display: inline-flex; flex-direction: column; align-items: center; font-size: 34px; line-height: 1.1; }
+/* The curved line under the name, as in the logo. */
+.auth-swoosh { width: 86%; height: 14px; margin-top: 2px; margin-left: 10%; overflow: visible; }
+.auth-swoosh path { fill: none; stroke: var(--accent); stroke-width: 6; stroke-linecap: round; }
 .auth-brand:hover { text-decoration: none; }
 .auth-card { width: 100%; display: flex; flex-direction: column; gap: 16px; padding: 32px; border-radius: 24px; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(18px) saturate(1.2); border: 1px solid color-mix(in srgb, var(--surface) 60%, transparent); box-shadow: 0 24px 60px rgb(10 40 38 / 14%), 0 1px 0 rgb(255 255 255 / 40%) inset; }
 .auth-head { display: flex; flex-direction: column; gap: 6px; text-align: center; margin-bottom: 4px; }

@@ -16,7 +16,7 @@
             <img src="/img/mascota.webp" width="720" height="720" alt="La mascota de Reelbakery: una barra de pan con boina de director, megáfono y portátil, sentada en una silla de rodaje">
         </div>
         <div class="auth-wrap">
-            <a class="auth-brand wordmark" href="{{ path('login') }}">Reel<span>bakery</span></a>
+            <a class="auth-brand" href="{{ path('login') }}"><span class="wordmark">Reel<span>bakery</span></span><svg class="auth-swoosh" viewBox="0 0 200 20" aria-hidden="true"><path d="M6 15 C 60 5, 130 3, 194 9" /></svg></a>
             {% block auth_form %}{% endblock %}
             <p class="auth-foot">Anuncios verticales para Reels y TikTok, recién hechos a partir de un anuncio que te guste.</p>
         </div>

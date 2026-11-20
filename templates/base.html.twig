@@ -8,8 +8,8 @@
     <script>
         try { const t = localStorage.getItem('theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t; } catch (e) {}
     </script>
-    <link rel="icon" type="image/png" href="/favicon.png">
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="icon" type="image/png" href="/favicon.png?v=2">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2">
     <meta name="theme-color" content="#0f766e">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
 {% block header %}
 <header class="top">
     <div class="top-in">
-        <a class="brand" href="{{ path('home') }}"><img class="brand-mark" src="/img/cabeza.png" alt="" width="40" height="40"><span class="wordmark">Reel<span>bakery</span></span></a>
+        <a class="brand" href="{{ path('home') }}"><img class="brand-mark" src="/img/logo.png" alt="" width="44" height="44"><span class="wordmark">Reel<span>bakery</span></span></a>
         {% if app.user %}
         <nav class="top-tabs" aria-label="Secciones">
             <a class="top-tab" href="{{ path('video_new') }}" {{ route == 'video_new' ? 'aria-current="page"' }}>{{ ui.icon('sparkles') }}<span>Crear anuncio</span></a>

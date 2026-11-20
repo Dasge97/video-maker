@@ -1,0 +1,20 @@
+{#
+   Entrar y crear cuenta: a pantalla completa, sin la barra de arriba, sobre un fondo de degradados
+   de los colores de la marca, con el formulario en una tarjeta centrada. Cada pantalla rellena
+   `auth_form`.
+#}
+{% extends 'base.html.twig' %}
+{% import '_icons.html.twig' as ui %}
+{% block body_class %}auth-page{% endblock %}
+{% block header %}{% endblock %}
+{% block main %}
+<main class="auth">
+    <div class="auth-bg" aria-hidden="true"><span></span><span></span><span></span></div>
+    <button type="button" class="icon-btn auth-theme" data-theme-toggle aria-label="Cambiar entre modo claro y oscuro">{{ ui.icon('moon') }}</button>
+    <div class="auth-wrap">
+        <a class="auth-brand" href="{{ path('login') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>video-maker</span></a>
+        {% block auth_form %}{% endblock %}
+        <p class="auth-foot">Anuncios verticales para Reels y TikTok a partir de un anuncio que te guste.</p>
+    </div>
+</main>
+{% endblock %}

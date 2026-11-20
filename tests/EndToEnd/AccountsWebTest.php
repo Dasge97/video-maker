@@ -23,9 +23,12 @@ final class AccountsWebTest extends WebTestCase
         self::assertResponseRedirects('/entrar');
         $client->request('GET', '/entrar');
         self::assertResponseIsSuccessful();
-        self::assertSelectorTextContains('h1', 'Entra');
+        self::assertSelectorTextContains('h1', 'Bienvenido');
+        // Anyone can sign up (REGISTRO_ABIERTO=1 by default): without its keys an account pays nothing.
+        self::assertSelectorExists('a[href="/registro"]');
         $client->request('GET', '/registro');
-        self::assertResponseStatusCodeSame(404, 'The sign up is closed unless REGISTRO_ABIERTO=1.');
+        self::assertResponseIsSuccessful();
+        self::assertSelectorTextContains('h1', 'Crea tu cuenta');
     }
 
     public function testTheLoginFormLetsTheAccountIn(): void

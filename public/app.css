@@ -375,12 +375,31 @@ button, input, select, textarea { font: inherit; color: inherit; }
 
 /* ---------- Accounts: login, settings, brands ---------- */
 .icon-btn[aria-current] { color: var(--accent); background: var(--accent-soft); }
-.auth { min-height: calc(100vh - var(--top-h) - 120px); display: grid; place-items: center; }
-.auth-card { width: 100%; max-width: 440px; display: flex; flex-direction: column; gap: 16px; padding: 32px; border-radius: 24px; background: var(--surface); box-shadow: var(--shadow); }
-.auth-card .ask { margin: 0; }
-.auth-card .ask-sub { margin: -8px 0 0; }
-.auth-card .btn-big { width: 100%; }
-.auth-ic { width: 56px; height: 56px; border-radius: 18px; display: grid; place-items: center; color: #fff; background: linear-gradient(135deg, var(--accent), var(--accent-2)); }
+/* ---- Entrar y crear cuenta: a pantalla completa, sobre degradados de la marca ---- */
+.auth { position: relative; min-height: 100vh; min-height: 100dvh; display: grid; place-items: center; padding: 32px 16px; overflow: hidden; isolation: isolate; }
+.auth-bg { position: absolute; inset: 0; z-index: -1; background: radial-gradient(120% 90% at 50% 0%, color-mix(in srgb, var(--accent) 10%, var(--bg)) 0%, var(--bg) 60%); }
+.auth-bg span { position: absolute; border-radius: 50%; filter: blur(80px); opacity: 0.55; animation: auth-float 22s ease-in-out infinite alternate; }
+.auth-bg span:nth-child(1) { width: 46vmax; height: 46vmax; left: -12vmax; top: -14vmax; background: var(--accent); }
+.auth-bg span:nth-child(2) { width: 40vmax; height: 40vmax; right: -12vmax; bottom: -16vmax; background: var(--accent-2); animation-duration: 26s; animation-direction: alternate-reverse; }
+.auth-bg span:nth-child(3) { width: 28vmax; height: 28vmax; right: 14vmax; top: -10vmax; background: #3fb6ff; opacity: 0.35; animation-duration: 30s; }
+/* Una rejilla muy suave encima de los degradados, que se apaga hacia los bordes. */
+.auth-bg::after { content: ''; position: absolute; inset: 0; background-image: linear-gradient(color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--text) 5%, transparent) 1px, transparent 1px); background-size: 48px 48px; mask-image: radial-gradient(70% 60% at 50% 45%, #000 0%, transparent 100%); }
+@keyframes auth-float { from { transform: translate(0, 0) scale(1); } to { transform: translate(6vmax, 4vmax) scale(1.12); } }
+@media (prefers-reduced-motion: reduce) { .auth-bg span { animation: none; } }
+.auth-theme { position: absolute; top: 20px; right: 20px; }
+.auth-wrap { width: 100%; max-width: 420px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.auth-brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 20px; letter-spacing: -0.02em; color: var(--text); }
+.auth-brand:hover { text-decoration: none; }
+.auth-brand .brand-mark { width: 40px; height: 40px; border-radius: 13px; box-shadow: 0 8px 24px color-mix(in srgb, var(--accent) 40%, transparent); }
+.auth-card { width: 100%; display: flex; flex-direction: column; gap: 16px; padding: 32px; border-radius: 24px; background: color-mix(in srgb, var(--surface) 82%, transparent); backdrop-filter: blur(18px) saturate(1.2); border: 1px solid color-mix(in srgb, var(--surface) 60%, transparent); box-shadow: 0 24px 60px rgb(20 16 40 / 14%), 0 1px 0 rgb(255 255 255 / 40%) inset; }
+.auth-head { display: flex; flex-direction: column; gap: 6px; text-align: center; margin-bottom: 4px; }
+.auth-head h1 { font-size: 26px; line-height: 1.2; letter-spacing: -0.02em; font-weight: 800; }
+.auth-head p { color: var(--muted); font-size: 15px; }
+.auth-card .btn-big { width: 100%; justify-content: center; margin-top: 4px; }
+.auth-switch { text-align: center; font-size: 14px; color: var(--muted); }
+.auth-switch a { font-weight: 700; }
+.auth-foot { max-width: 34ch; text-align: center; font-size: 13px; color: var(--muted); }
+@media (max-width: 480px) { .auth-card { padding: 24px 20px; } .auth-theme { top: 12px; right: 12px; } }
 .settings { max-width: 720px; display: flex; flex-direction: column; gap: 16px; }
 .settings.wide { max-width: none; }
 .settings-intro { margin: 0; max-width: 64ch; }

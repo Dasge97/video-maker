@@ -14,8 +14,9 @@
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap">
     <link rel="stylesheet" href="/app.css">
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
 {% set route = app.request.attributes.get('_route') %}
+{% block header %}
 <header class="top">
     <div class="top-in">
         <a class="brand" href="{{ path('home') }}"><span class="brand-mark">{{ ui.icon('play', 'icon-16') }}</span><span>video-maker</span></a>
@@ -35,9 +36,12 @@
         {% endif %}
     </div>
 </header>
+{% endblock %}
+{% block main %}
 <main class="page">
     {% block body %}{% endblock %}
 </main>
+{% endblock %}
 <div class="toasts" aria-live="polite" data-toasts></div>
 <dialog class="dialog" data-confirm>
     <div class="dialog-body">
